@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Undercover en Just One — partyspellen voor op de bank." />
+    <meta name="theme-color" content="#eceff7" />
+    <meta name="color-scheme" content="light" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Spellen" />
+    <base href="/" />
+
+    <link rel="preload" href="fonts/inter-v19-latin-800.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/inter-v19-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["css/design-system.css"]" />
+    <link rel="stylesheet" href="@Assets["css/rooms.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["DonitGames.Web.styles.css"]" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <ImportMap />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]" autostart="false"></script>
+    <script src="@Assets["js/app.js"]"></script>
+</body>
+
+</html>
