@@ -1,0 +1,35 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Er ging iets mis</PageTitle>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <p class="eyebrow">Foutmelding</p>
+            <h1>😬 Er ging iets mis</h1>
+            <p class="subtle">Er is een fout opgetreden bij het verwerken van je verzoek.</p>
+        </div>
+
+        @if (ShowRequestId)
+        {
+            <div class="note">
+                <strong>Request ID:</strong> <code>@RequestId</code>
+            </div>
+        }
+
+        <div class="action-bar">
+            <a class="btn btn-primary btn-lg" href="">Naar de spellen</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

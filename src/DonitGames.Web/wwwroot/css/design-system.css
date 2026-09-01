@@ -1,0 +1,1294 @@
+/* ==========================================================================
+   Undercover - mobile-first design system
+   Light, crisp, high contrast. The phone is the primary target; wider
+   screens just get more breathing room.
+   Self-hosted fonts (see ../fonts/) - no external @import, so the strict
+   GitHub Pages CSP stays happy.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter-v19-latin-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter-v19-latin-800.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Roboto Mono';
+  src: url('../fonts/roboto-mono-v30-latin-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Roboto Mono';
+  src: url('../fonts/roboto-mono-v30-latin-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --------------------------------------------------------------------------
+   Tokens
+   The legacy variable names (--bg-glass, --accent-primary, --bg-card, ...)
+   are kept because inline styles in the .razor pages still reference them.
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --bg: #eceff7;
+  --bg-primary: #eceff7;
+  --bg-secondary: #e3e8f4;
+  --surface: #ffffff;
+  --surface-2: #f5f7fc;
+  --surface-3: #eaeef7;
+  --bg-card: #ffffff;
+  --bg-glass: #f5f7fc;
+
+  /* Lines */
+  --border: #dde2ee;
+  --border-strong: #c3cadb;
+
+  /* Ink */
+  --text-primary: #10131f;
+  --text-secondary: #3c4459;
+  --text-muted: #6a7288;
+
+  /* Accents - darker than the old neon set so they stay legible on white */
+  --accent-primary: #5b34e0;
+  --accent-strong: #4a27c4;
+  --accent-soft: #efeaff;
+  --accent-line: #d9cffb;
+  --accent-secondary: #0b7fa5;
+
+  --danger: #d92c3f;
+  --danger-ink: #a81f2f;
+  --danger-soft: #fdeaec;
+  --danger-line: #f4c3c9;
+  --success: #0a8c5e;
+  --success-ink: #076846;
+  --success-soft: #e4f6ee;
+  --success-line: #bfe6d5;
+  --warning: #b7791f;
+  --neutral: #5c6478;
+  --neutral-ink: #414a5e;
+  --neutral-soft: #eef0f5;
+  --neutral-line: #d8dde8;
+
+  /* Elevation - small and crisp, never a smoky halo */
+  --shadow-sm: 0 1px 2px rgba(16, 20, 40, .06);
+  --shadow: 0 1px 2px rgba(16, 20, 40, .05), 0 4px 14px rgba(16, 20, 40, .07);
+  --shadow-lg: 0 2px 4px rgba(16, 20, 40, .05), 0 12px 32px rgba(16, 20, 40, .11);
+
+  --radius-lg: 20px;
+  --radius: 14px;
+  --radius-sm: 10px;
+
+  --tap: 48px; /* minimum comfortable touch target */
+}
+
+* { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+html, body, #app {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(120% 55% at 50% -8%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(85% 45% at 100% 0%, var(--accent-soft) 0%, rgba(255, 255, 255, 0) 60%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.55;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Everything interactive: no 300ms delay, no blue flash on tap */
+button, a, select, input, textarea, .vote-card, .game-card, .reveal-gate {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-container {
+  min-height: 100vh;
+  min-height: 100svh; /* svh avoids the mobile browser chrome jump */
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0.75rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+
+.container {
+  width: 100%;
+  max-width: 560px;
+}
+
+/* --------------------------------------------------------------------------
+   Typography
+   -------------------------------------------------------------------------- */
+h1 {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+  text-align: center;
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.018em;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+}
+
+h4 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+p { margin: 0 0 0.75rem; }
+p:last-child { margin-bottom: 0; }
+
+.lead {
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem;
+  text-wrap: pretty;
+}
+
+.subtle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+}
+
+/* Small mono label: section eyebrows, the label above a secret word, ... */
+.eyebrow {
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.text-link {
+  color: var(--accent-primary);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--accent-line);
+}
+.text-link:hover { border-bottom-color: var(--accent-primary); }
+
+/* --------------------------------------------------------------------------
+   Card - the single surface every screen lives on
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.125rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow);
+  animation: cardIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 1.125rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-header > :last-child { margin-bottom: 0; }
+.card-header .eyebrow { display: block; margin: 0 0 0.3rem; }
+
+/* An action row placed right before the sticky bar must clear its negative
+   bottom margin, so give the note the spacing instead. */
+.action-note + .action-bar { margin-top: 0.5rem; }
+
+/* Inset note / callout block */
+.note {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.925rem;
+}
+
+.note.accent {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-strong);
+}
+
+.note-center { text-align: center; }
+
+/* --------------------------------------------------------------------------
+   Buttons
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: var(--tap);
+  padding: 0.7rem 1.15rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 0.975rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  appearance: none;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease,
+              box-shadow .16s ease, transform .08s ease;
+}
+
+.btn:active:not(:disabled) { transform: scale(0.975); }
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-block { width: 100%; }
+
+.btn-lg {
+  min-height: 54px;
+  font-size: 1.05rem;
+  padding: 0.85rem 1.5rem;
+}
+
+.btn-sm {
+  min-height: 38px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.btn-outline-secondary {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+.btn-outline-secondary:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.btn-outline-secondary.is-on {
+  border-color: var(--accent-primary);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.btn-danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger-ink);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn-success {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.btn-success:hover:not(:disabled) { background: var(--success-ink); }
+
+/* Round stepper button (- / +) */
+.btn-step {
+  width: 2.9rem;
+  min-width: 2.9rem;
+  height: 2.9rem;
+  min-height: 2.9rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Sticky footer action row: the primary choice stays in thumb reach on the
+   long setup screens instead of hiding below the fold. */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.25rem -1.125rem -1.125rem;
+  padding: 0.75rem 1.125rem;
+  padding-bottom: calc(0.875rem + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.action-bar .btn { flex: 1; }
+.action-bar .btn-back { flex: 0 0 auto; padding-inline: 1.1rem; }
+
+.action-note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+  margin: 0.75rem 0 0;
+}
+
+/* Keyboard focus - always visible, never only a hover state */
+.btn:focus-visible,
+.game-card:focus-visible,
+.vote-card:focus-visible,
+.reveal-gate:focus-visible,
+.custom-select:focus-visible,
+.form-control:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Forms
+   -------------------------------------------------------------------------- */
+.form-group { margin-bottom: 1.125rem; }
+.form-group:last-child { margin-bottom: 0; }
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.form-hint {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: -0.15rem 0 0.5rem;
+}
+
+.form-control, .input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 16px; /* 16px keeps iOS Safari from zooming in on focus */
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.form-control::placeholder { color: #9aa2b4; }
+
+.form-control:focus, .input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+textarea.form-control { line-height: 1.5; }
+
+/* Select */
+.custom-select-wrapper {
+  position: relative;
+  display: block;
+}
+
+.custom-select {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.7rem 2.75rem 0.7rem 0.9rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.custom-select:hover { border-color: var(--accent-primary); }
+
+.custom-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  pointer-events: none;
+}
+
+.custom-select option {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* Range slider - the browser default is unusable on a phone */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2.75rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow);
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* Slider header: label on the left, big live value on the right */
+.slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.slider-head .form-label { margin-bottom: 0; }
+
+.slider-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.slider-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px;
+}
+
+/* Category description under the select */
+.category-info {
+  margin-top: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.category-info.mixed {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.category-info p { margin: 0; }
+.category-info p + p { margin-top: 0.2rem; }
+
+.category-info .count {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.category-info.mixed .headline {
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+/* --------------------------------------------------------------------------
+   Step indicator
+   -------------------------------------------------------------------------- */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.step-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: width .2s ease, background-color .2s ease;
+}
+
+.step-dot.active {
+  width: 1.75rem;
+  background: var(--accent-primary);
+}
+
+.step-dot.done { background: #b9a7f4; }
+
+/* --------------------------------------------------------------------------
+   Player list
+   -------------------------------------------------------------------------- */
+.player-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.player-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--tap);
+  padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.player-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.player-identity img {
+  width: 1.9rem;
+  height: 1.9rem;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.player-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.player-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.player-status {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.player-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.quick-start-tag {
+  font-size: 0.8rem;
+  flex: 0 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   Badges
+   -------------------------------------------------------------------------- */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.role-civilian {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent-line);
+}
+
+.role-undercover {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: var(--danger-line);
+}
+
+.role-mrwhite {
+  background: var(--neutral-soft);
+  color: var(--neutral-ink);
+  border-color: var(--neutral-line);
+}
+
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: var(--success-soft);
+  color: var(--success-ink);
+  border: 1px solid var(--success-line);
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Remaining-players pill */
+.status-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: fit-content;
+  margin: 0 auto 1.125rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Role distribution tiles
+   -------------------------------------------------------------------------- */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.role-tile {
+  padding: 0.875rem 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.role-tile-icon {
+  position: relative;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.5rem;
+}
+
+.role-tile-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.role-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 2px solid var(--surface);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.role-count.civilian   { background: var(--accent-primary); }
+.role-count.undercover { background: var(--danger); }
+.role-count.mrwhite    { background: var(--neutral); }
+
+.role-tile-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.role-tile-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Panel wrapper for the custom role steppers */
+.stepper-panel {
+  margin-top: 0.75rem;
+  padding: 0.875rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.stepper-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.stepper { text-align: center; }
+
+.stepper-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.stepper-value {
+  min-width: 2rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.form-error {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--danger-ink);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Phase panel (a titled section)
+   -------------------------------------------------------------------------- */
+.phase-indicator {
+  padding: 0.875rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1.125rem;
+  text-align: center;
+}
+
+.phase-title {
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.phase-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Timer */
+.timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1.125rem;
+  text-align: center;
+}
+
+.timer-value {
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* --------------------------------------------------------------------------
+   Secret word reveal
+   -------------------------------------------------------------------------- */
+.word-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 170px;
+  padding: 1.75rem 1.25rem;
+  background: var(--accent-soft);
+  border: 2px solid var(--accent-line);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  animation: wordIn .3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.word-display.is-mrwhite {
+  background: var(--neutral-soft);
+  border-color: var(--neutral-line);
+}
+
+.word-category {
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.word-display.is-mrwhite .word-category { color: var(--neutral-ink); }
+
+.word-text {
+  font-size: clamp(1.75rem, 9vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+@keyframes wordIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Tap-to-reveal privacy gate */
+.reveal-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 0.72;
+  margin: 0 auto;
+  padding: 1.25rem;
+  background: var(--surface-2);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color .16s ease, background-color .16s ease, transform .08s ease;
+}
+
+.reveal-gate:hover { border-color: var(--accent-primary); background: var(--accent-soft); }
+.reveal-gate:active { transform: scale(0.98); }
+.reveal-gate .reveal-icon { font-size: 2.75rem; line-height: 1; }
+
+/* --------------------------------------------------------------------------
+   Card picking grid
+   -------------------------------------------------------------------------- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.75rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.game-card {
+  aspect-ratio: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #7052ee, var(--accent-strong));
+  box-shadow: var(--shadow);
+  font-size: clamp(1.75rem, 8vw, 2.5rem);
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  transition: transform .1s ease, box-shadow .16s ease;
+}
+
+.game-card:hover { box-shadow: var(--shadow-lg); }
+.game-card:active { transform: scale(0.94); }
+
+/* --------------------------------------------------------------------------
+   Vote cards
+   -------------------------------------------------------------------------- */
+.vote-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1.125rem;
+}
+
+.vote-card {
+  width: 100%;
+  min-height: 76px;
+  padding: 0.875rem 0.65rem;
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  text-align: center;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color .16s ease, background-color .16s ease,
+              box-shadow .16s ease, transform .08s ease;
+}
+
+.vote-card:hover { border-color: var(--accent-primary); }
+.vote-card:active { transform: scale(0.97); }
+
+.vote-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.vote-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.vote-card.selected {
+  border-color: var(--accent-primary);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.vote-card.selected .vote-hint {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Outcome screens (elimination / results)
+   -------------------------------------------------------------------------- */
+.outcome {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.outcome-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.outcome-emoji {
+  display: block;
+  font-size: 2.75rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.outcome-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.outcome-title.win  { color: var(--accent-primary); }
+.outcome-title.lose { color: var(--danger); }
+
+.outcome-sub {
+  color: var(--text-muted);
+  font-size: 0.925rem;
+}
+
+/* Two-up word reveal at the end of a round */
+.word-pair-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.word-pair-cell {
+  padding: 0.65rem 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.word-pair-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.word-pair-label.civilian   { color: var(--accent-primary); }
+.word-pair-label.undercover { color: var(--danger); }
+
+.word-pair-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   Suggested-name chips
+   -------------------------------------------------------------------------- */
+.name-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+
+.name-grid .btn {
+  min-height: 42px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   Prose (How to play)
+   -------------------------------------------------------------------------- */
+.prose { color: var(--text-secondary); }
+.prose h4 { color: var(--text-primary); margin: 1.35rem 0 0.4rem; }
+.prose h4:first-child { margin-top: 0; }
+.prose ol, .prose ul { padding-left: 1.15rem; margin: 0 0 0.5rem; }
+.prose li { margin-bottom: 0.35rem; }
+.prose strong { color: var(--text-primary); }
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem 0 1rem;
+  text-align: center;
+}
+
+.footer-links a {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.3rem 0.5rem;
+}
+
+.footer-links a:hover { color: var(--accent-primary); }
+
+.footer-version {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+/* --------------------------------------------------------------------------
+   Utilities
+   -------------------------------------------------------------------------- */
+.center { text-align: center; }
+.mb-0 { margin-bottom: 0; }
+.mt-1 { margin-top: 0.75rem; }
+
+.loading-spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.fade-in { animation: fadeIn .25s ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* --------------------------------------------------------------------------
+   Larger screens - the phone layout just gets more room
+   -------------------------------------------------------------------------- */
+@media (min-width: 600px) {
+  .app-container { padding: 1.75rem 1.25rem; }
+  .container { max-width: 640px; }
+
+  .card {
+    padding: 1.75rem;
+    border-radius: 24px;
+  }
+
+  .action-bar {
+    position: static;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    border-top: none;
+    justify-content: center;
+  }
+
+  .action-bar .btn { flex: 0 1 auto; min-width: 190px; }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+
+  .vote-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .card-grid { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); max-width: 480px; }
+  .role-tile-icon { width: 3.5rem; height: 3.5rem; }
+}
+
+/* Respect a reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
