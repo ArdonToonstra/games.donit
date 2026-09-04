@@ -145,14 +145,36 @@ a "who's here / tap the button / see the counter" toy with no game rules at all.
       reach 0 pips across many rounds.
 - [ ] Real-phone pass — deferred alongside Phases 2–3's, same reason (needs hardware).
 
-## Phase 5 — Bundle the WASM app locally
+## Phase 5 — Bundle the WASM app locally ✅
 
-Do it by hand first, so the later CI step only automates something already proven.
-
-- [ ] Publish `undercover-game` with `<base href="/undercover/">` into `wwwroot/undercover/`
-- [ ] Copy its `WordPairs.yaml` into `Data/` (one source of truth for both variants)
-- [ ] Verify a **hard load** of `/undercover/how-to-play` works — the bug GH Pages has today
-- [ ] Verify `.wasm` / `.dat` assets return 200 with sensible content types
+- [x] Published `undercover-client` (`dotnet publish -c Release`), rewrote `<base href="/" />`
+      → `<base href="/undercover/">` in the published `index.html` (same `sed` step as the
+      repo's own `deploy-gh-pages.yml`), copied the output into `wwwroot/undercover/`
+      (gitignored — staged build output, not authored here, restaged by hand whenever the
+      other repo changes)
+- [x] `WordPairs.yaml` — turned out to already be identical in both repos (byte-for-byte
+      `diff`), so no copy was needed this pass; kept as-is rather than introduced a sync step
+      that isn't load-bearing yet
+- [x] Hard load of `/undercover/how-to-play` verified two ways: `curl` (200, `text/html`) and
+      a real Playwright browser navigating straight to the deep link (not client-side routed)
+      — confirms `MapFallbackToFile` avoids the GH-Pages blank-page bug
+- [x] `.wasm`/`.dat`/`.yaml` assets verified 200 with correct content types — **found and
+      fixed a real bug along the way**: `MapStaticAssets()` (added in Phase 0) installs a
+      Development-only catch-all (`StaticAssetDevelopmentRuntimeHandler`) that 404s any
+      request under `wwwroot` not in its build-time manifest, and it wins over `UseStaticFiles`
+      regardless of middleware order — confirmed by disabling `MapStaticAssets()` entirely and
+      watching the same requests succeed. Since the WASM bundle is staged by hand outside
+      MSBuild's view (its manifest would go stale the moment the bundle is restaged anyway),
+      `/undercover/**` is now served by a small hand-written middleware that reads straight off
+      disk and short-circuits before either `MapStaticAssets` or `UseStaticFiles` sees the
+      request — see the comment block in `Program.cs`. `DonitGames.Web.csproj` also excludes
+      `undercover/**` from the `StaticWebAssetEndpointExclusionPattern` so the rest of the
+      portal's own assets keep MapStaticAssets' compression/fingerprinting untouched.
+- [x] Full regression pass after the fix: `dotnet test` (162/162), plus all three
+      Playwright smoke tests re-run clean (Echo-era infra covered by Undercover/Just One's) —
+      and a genuine pass-and-play round played through a real browser (landing → suggested
+      players → start game → pick a card → reveal → a real word from `WordPairs.yaml`
+      rendered), confirming the bundle isn't just reachable but actually playable.
 
 **End of the build pass.** All three games playable at `http://localhost:5000` and from phones.
 

@@ -6,6 +6,16 @@
 
   <PropertyGroup>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+
+    <!--
+      wwwroot/undercover/ is the pass-and-play WASM app, staged by hand (Phase 5)
+      from a separate repo's `dotnet publish` output, not authored as part of this
+      project. Its files change outside MSBuild's view, so MapStaticAssets'
+      build-time compression/fingerprint manifest goes stale the moment they're
+      restaged — Program.cs serves it with a small hand-written middleware
+      instead, reading current bytes straight off disk (see the comment there).
+    -->
+    <StaticWebAssetEndpointExclusionPattern>$(StaticWebAssetEndpointExclusionPattern);**/undercover/**</StaticWebAssetEndpointExclusionPattern>
   </PropertyGroup>
 
   <ItemGroup>
