@@ -1,0 +1,121 @@
+@page "/join/{Code}"
+@layout MainLayout
+@using System.ComponentModel.DataAnnotations
+@using DonitGames.Core.JustOne
+@using DonitGames.Core.Rooms
+@using DonitGames.Core.Rooms.Echo
+@using DonitGames.Core.Undercover
+@using DonitGames.Web.Components.Rooms
+@using DonitGames.Web.Rooms
+
+<PageTitle>Meedoen — donit</PageTitle>
+
+@if (!_roomFound)
+{
+    <RoomExpired />
+}
+else
+{
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <p class="eyebrow">Kamer @Code</p>
+                <h1>Meedoen</h1>
+                <p class="subtle">Hoe mogen we je noemen?</p>
+            </div>
+
+            <EditForm Model="Model" FormName="join" OnValidSubmit="HandleJoin" method="post">
+                @* EditForm already renders the antiforgery token itself when FormName is set — see
+                   the note in EchoLobby.razor. *@
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label class="form-label" for="displayName">Jouw naam</label>
+                    <InputText id="displayName" class="form-control" @bind-Value="Model!.DisplayName" autofocus />
+                    <ValidationMessage For="() => Model!.DisplayName" />
+                </div>
+                <div class="action-bar">
+                    <button type="submit" class="btn btn-primary btn-lg btn-block">Meedoen</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Code { get; set; } = string.Empty;
+
+    // Nullable, no initializer (BL0008: the framework overwrites this with null on every form
+    // post before OnInitialized runs, so a "= new()" here would just lie about that). Must stay
+    // named exactly "Model" — it's also what EditForm binds to below, and the two have to agree
+    // for [SupplyParameterFromForm]'s posted field names ("Model.DisplayName") to resolve.
+    [SupplyParameterFromForm]
+    private JoinModel? Model { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Inject]
+    private RoomRegistry<EchoState> EchoRegistry { get; set; } = default!;
+
+    [Inject]
+    private RoomRegistry<UndercoverState> UndercoverRegistry { get; set; } = default!;
+
+    [Inject]
+    private RoomRegistry<JustOneState> JustOneRegistry { get; set; } = default!;
+
+    [Inject]
+    private SeatCookieService Cookies { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    private bool _roomFound;
+
+    protected override void OnInitialized()
+    {
+        Model ??= new JoinModel();
+        // Today there are three registries; each future game adds one more TryGet branch here
+        // and in HandleJoin below, not a rewrite of the lookup shape.
+        _roomFound = EchoRegistry.TryGet(Code, out _) || UndercoverRegistry.TryGet(Code, out _) || JustOneRegistry.TryGet(Code, out _);
+    }
+
+    private void HandleJoin()
+    {
+        if (HttpContext is null)
+        {
+            _roomFound = false;
+            return;
+        }
+
+        var seat = new Seat(Guid.NewGuid(), Model!.DisplayName.Trim(), IsHost: false, DateTimeOffset.UtcNow);
+
+        if (EchoRegistry.TryGet(Code, out var echoRoom))
+        {
+            echoRoom.AddSeat(seat);
+        }
+        else if (UndercoverRegistry.TryGet(Code, out var undercoverRoom))
+        {
+            undercoverRoom.AddSeat(seat);
+        }
+        else if (JustOneRegistry.TryGet(Code, out var justOneRoom))
+        {
+            justOneRoom.AddSeat(seat);
+        }
+        else
+        {
+            _roomFound = false;
+            return;
+        }
+
+        Cookies.Set(HttpContext.Response, Code, seat.SeatId);
+        Navigation.NavigateTo($"/room/{Code}");
+    }
+
+    private sealed class JoinModel
+    {
+        [Required(ErrorMessage = "Vul je naam in.")]
+        [StringLength(24, MinimumLength = 1, ErrorMessage = "Gebruik 1 tot 24 tekens.")]
+        public string DisplayName { get; set; } = string.Empty;
+    }
+}

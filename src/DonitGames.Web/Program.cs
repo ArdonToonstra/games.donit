@@ -1,4 +1,10 @@
+using DonitGames.Core.JustOne;
+using DonitGames.Core.Rooms;
+using DonitGames.Core.Rooms.Echo;
+using DonitGames.Core.Undercover;
 using DonitGames.Web.Components;
+using DonitGames.Web.Rooms;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -48,6 +54,36 @@ builder.Services.AddRazorComponents()
     });
 
 builder.Services.AddHealthChecks();
+
+// ---------------------------------------------------------------------------
+// Room infrastructure (Phase 2). Each game gets its own RoomRegistry<TState>,
+// registered under both its concrete type (so shells can inject it directly)
+// and the non-generic IRoomRegistry (so RoomJanitor can sweep every game's
+// rooms without knowing their state types). Rooms live in memory only — a
+// redeploy drops them, by design (docs/DEPLOYMENT.md).
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton<SeatCookieService>();
+builder.Services.AddSingleton<RoomRegistry<EchoState>>();
+builder.Services.AddSingleton<IRoomRegistry>(sp => sp.GetRequiredService<RoomRegistry<EchoState>>());
+builder.Services.AddSingleton<IGameSession<EchoState, EchoView>, EchoSession>();
+
+builder.Services.AddSingleton<UndercoverWordCategoryProvider>();
+builder.Services.AddSingleton<RoomRegistry<UndercoverState>>();
+builder.Services.AddSingleton<IRoomRegistry>(sp => sp.GetRequiredService<RoomRegistry<UndercoverState>>());
+builder.Services.AddSingleton<IGameSession<UndercoverState, UndercoverView>, UndercoverSession>();
+
+builder.Services.AddSingleton<JustOneWordBankProvider>();
+builder.Services.AddSingleton<RoomRegistry<JustOneState>>();
+builder.Services.AddSingleton<IRoomRegistry>(sp => sp.GetRequiredService<RoomRegistry<JustOneState>>());
+builder.Services.AddSingleton<IGameSession<JustOneState, JustOneView>, JustOneSession>();
+
+builder.Services.AddHostedService<RoomJanitor>();
+
+// Scoped per circuit: bridges the component that knows its seat to the
+// circuit handler, which is the only thing still alive when a circuit is
+// finally evicted (CLAUDE.md non-negotiable #4).
+builder.Services.AddScoped<CircuitSeatRegistration>();
+builder.Services.AddScoped<CircuitHandler, SeatPresenceCircuitHandler>();
 
 var app = builder.Build();
 

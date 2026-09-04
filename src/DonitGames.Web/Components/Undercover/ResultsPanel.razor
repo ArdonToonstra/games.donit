@@ -1,0 +1,67 @@
+@using DonitGames.Core.Undercover
+
+<div class="card">
+    <div class="outcome">
+        <span class="outcome-emoji" aria-hidden="true">🏆</span>
+        <p class="outcome-title win">@WinnerLabel(Winner)</p>
+    </div>
+
+    <table class="scoreboard">
+        <thead>
+            <tr>
+                <th>Speler</th>
+                <th>Rol</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var player in Players.OrderByDescending(p => p.Score))
+            {
+                <tr>
+                    <td>@player.DisplayName</td>
+                    <td>@RoleLabel(player.RevealedRole)</td>
+                    <td>@player.Score</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (YouAreHost)
+    {
+        <div class="action-bar">
+            <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnNewGame.InvokeAsync()">
+                Nieuw spel
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public UndercoverWinner? Winner { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UndercoverPlayerView> Players { get; set; } = [];
+
+    [Parameter]
+    public bool YouAreHost { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnNewGame { get; set; }
+
+    private static string WinnerLabel(UndercoverWinner? winner) => winner switch
+    {
+        UndercoverWinner.Civilians => "De burgers winnen!",
+        UndercoverWinner.UndercoverTeam => "Undercover wint!",
+        UndercoverWinner.MrWhiteSolo => "Mr. White wint!",
+        _ => "Spel afgelopen",
+    };
+
+    private static string RoleLabel(UndercoverRole? role) => role switch
+    {
+        UndercoverRole.Civilian => "Burger",
+        UndercoverRole.Undercover => "Undercover",
+        UndercoverRole.MrWhite => "Mr. White",
+        _ => "?",
+    };
+}

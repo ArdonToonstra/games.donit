@@ -1,0 +1,60 @@
+@using DonitGames.Core.Undercover
+
+<div class="card">
+    <div class="card-header">
+        <p class="eyebrow">Kaarten kiezen</p>
+        <h1>🃏 Kies een kaart</h1>
+        <p class="subtle">Iedereen kiest een dichte kaart. Onthoud je woord, maar hou het geheim!</p>
+    </div>
+
+    @if (YourRole is not null)
+    {
+        <div class="word-display @(YourRole == UndercoverRole.MrWhite ? "is-mrwhite" : "")">
+            @if (YourRole == UndercoverRole.MrWhite)
+            {
+                <span class="word-category">Jij bent</span>
+                <span class="word-text">Mr. White</span>
+                <p class="subtle">Jij hebt geen woord. Luister goed en probeer niet op te vallen.</p>
+            }
+            else
+            {
+                <span class="word-category">Jouw geheime woord</span>
+                <span class="word-text">@YourSecretWord</span>
+            }
+        </div>
+        <p class="form-hint">Wachten tot iedereen gekozen heeft…</p>
+    }
+    else
+    {
+        @if (LastResult == PickResult.CardAlreadyTaken)
+        {
+            <p class="form-error">Iemand was je net voor — kies een andere kaart.</p>
+        }
+        <div class="card-grid">
+            @foreach (var card in Deck)
+            {
+                <button type="button" class="game-card" disabled="@(card.TakenBySeatId is not null)"
+                    @onclick="() => OnPick.InvokeAsync(card.Index)">
+                    @(card.TakenBySeatId is not null ? "✓" : "❓")
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UndercoverCardView> Deck { get; set; } = [];
+
+    [Parameter]
+    public UndercoverRole? YourRole { get; set; }
+
+    [Parameter]
+    public string? YourSecretWord { get; set; }
+
+    [Parameter]
+    public PickResult? LastResult { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<int> OnPick { get; set; }
+}

@@ -1,0 +1,30 @@
+@using DonitGames.Core.Rooms
+@using DonitGames.Core.Rooms.Echo
+
+<div class="card echo-board">
+    <div class="card-header">
+        <p class="eyebrow">Tikteller</p>
+        <h2 class="echo-tap-count">@View.TapCount</h2>
+        @if (View.YouAreLastTapper)
+        {
+            <p class="subtle">Jij tikte laatst!</p>
+        }
+    </div>
+    <div class="action-bar">
+        <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="Tap">Tik!</button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public GameRoom<EchoState> Room { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public Guid SeatId { get; set; }
+
+    [Parameter, EditorRequired]
+    public EchoView View { get; set; } = default!;
+
+    private void Tap() =>
+        Room.Mutate(s => s with { Game = new EchoState(s.Game.TapCount + 1, SeatId) });
+}

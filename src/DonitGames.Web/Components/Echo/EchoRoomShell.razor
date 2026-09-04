@@ -1,0 +1,40 @@
+@* Prerendering disabled — see the warning on RoomComponentBase. Static prerendering would run
+   OnInitialized (and its presence +1) once with no real circuit, then again for the real one. *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inherits RoomComponentBase<EchoState, EchoView>
+@using DonitGames.Core.Rooms.Echo
+@using DonitGames.Web.Components.Rooms
+
+@if (RoomMissing)
+{
+    <RoomExpired />
+}
+else if (Snapshot is not null && View is not null && Room is not null)
+{
+    <div class="container">
+        <LobbyPanel RoomCode="@RoomCode" JoinUrl="@_joinUrl" Seats="Snapshot.Seats" Presence="Snapshot.Presence" ViewerSeatId="SeatId">
+            <EchoBoard Room="Room" SeatId="SeatId" View="View" />
+        </LobbyPanel>
+
+        @if (View.YouAreHost)
+        {
+            <HostTools Seats="Snapshot.Seats" ViewerSeatId="SeatId" OnKick="Kick" />
+        }
+    </div>
+}
+
+@code {
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    private string _joinUrl = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _joinUrl = Navigation.ToAbsoluteUri($"join/{RoomCode}").ToString();
+    }
+
+    private void Kick(Guid seatId) => Room?.RemoveSeat(seatId);
+}

@@ -90,3 +90,253 @@ a.menu-tile:active { transform: scale(0.985); }
 @media (min-width: 600px) {
   .menu-tile-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* --------------------------------------------------------------------------
+   Lobby: room code, QR, seat list. Shared by every game's room shell.
+   -------------------------------------------------------------------------- */
+.lobby-panel {
+  margin-bottom: 1rem;
+}
+
+.room-code {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 2.2rem;
+  letter-spacing: 0.12em;
+  color: var(--accent-primary);
+  margin: 0;
+}
+
+.qr-code {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.qr-code svg {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.seat-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.seat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  min-height: var(--tap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.seat-name {
+  flex: 1;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.presence-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.presence-dot.is-connected { background: var(--success-ink, #1a8a4a); }
+.presence-dot.is-away { background: var(--text-muted); }
+
+.seat-host-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-strong);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* --------------------------------------------------------------------------
+   Host tools: kick list.
+   -------------------------------------------------------------------------- */
+.host-tools-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.host-tools-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Echo toy board.
+   -------------------------------------------------------------------------- */
+.echo-tap-count {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 3rem;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Undercover Online. Card/vote grids, word reveal and the timer reuse
+   design-system.css's .game-card/.vote-card/.word-display/.timer as-is —
+   this only covers what that file doesn't already have.
+   -------------------------------------------------------------------------- */
+.game-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+
+.speaking-order {
+  margin: 0.5rem 0 1.125rem;
+  padding-left: 1.25rem;
+}
+
+.speaking-order li {
+  padding: 0.15rem 0;
+}
+
+.vote-tally {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vote-tally li {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.scoreboard {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.scoreboard th,
+.scoreboard td {
+  padding: 0.6rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.scoreboard th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Just One. Word reveal, outcome screens and word-pair cells reuse
+   design-system.css's .word-display/.outcome/.word-pair-* as-is.
+   -------------------------------------------------------------------------- */
+.peek-shield {
+  text-align: center;
+}
+
+.clue-review-list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.clue-review-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.clue-review-item .seat-name {
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.clue-review-item .clue-text {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.clue-review-item.is-cancelled {
+  opacity: 0.55;
+}
+
+.clue-review-item.is-cancelled .clue-text {
+  text-decoration: line-through;
+}
+
+.clue-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.review-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.score-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: center;
+  margin: 1rem 0 0.35rem;
+}
+
+.score-pip {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 1px solid var(--accent-line);
+}
+
+.score-pip.is-filled { background: var(--accent-primary); border-color: var(--accent-primary); }
+.score-pip.is-spent { background: var(--surface-2); }

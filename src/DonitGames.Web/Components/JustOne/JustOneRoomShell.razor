@@ -1,0 +1,105 @@
+@* Prerendering disabled — see the warning on RoomComponentBase. *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inherits RoomComponentBase<JustOneState, JustOneView>
+@using DonitGames.Core.JustOne
+@using DonitGames.Web.Components.Rooms
+@using DonitGames.Web.Rooms
+
+@if (RoomMissing)
+{
+    <RoomExpired />
+}
+else if (Snapshot is not null && View is not null && Room is not null)
+{
+    <div class="container">
+        @switch (View.Phase)
+        {
+            case JustOnePhase.Lobby:
+                <LobbyPanel RoomCode="@RoomCode" JoinUrl="@_joinUrl" Seats="Snapshot.Seats" Presence="Snapshot.Presence" ViewerSeatId="SeatId">
+                    @if (View.YouAreHost)
+                    {
+                        <div class="action-bar">
+                            <button type="button" class="btn btn-primary btn-lg btn-block" disabled="@(!CanStart)" @onclick="StartGame">
+                                Start spel
+                            </button>
+                        </div>
+                        @if (!CanStart)
+                        {
+                            <p class="form-hint">Nodig: 3 tot 8 spelers (nu @Snapshot.Seats.Count).</p>
+                        }
+                    }
+                </LobbyPanel>
+                <HostTools Seats="Snapshot.Seats" ViewerSeatId="SeatId" OnKick="Kick" />
+                break;
+
+            case JustOnePhase.ClueWriting:
+                <ClueWritingPanel View="View" OnSubmitClue="SubmitClue" OnCloseClueWriting="CloseClueWriting" />
+                break;
+
+            case JustOnePhase.DuplicateReview:
+                <DuplicateReviewView View="View" OnToggleGroup="ToggleReviewGroup" OnReveal="Reveal" />
+                break;
+
+            case JustOnePhase.Guessing:
+                <GuessingPanel View="View" OnSubmitGuess="SubmitGuess" OnPass="Pass" />
+                break;
+
+            case JustOnePhase.JudgeReview:
+                <JudgeReviewPanel View="View" OnJudgeDecision="JudgeDecision" />
+                break;
+
+            case JustOnePhase.RoundResult:
+                <RoundResultPanel View="View" OnAcknowledge="AcknowledgeRoundResult" />
+                break;
+
+            case JustOnePhase.GameResults:
+                <GameResultsPanel View="View" OnNewGame="StartNewGame" />
+                break;
+        }
+    </div>
+}
+
+@code {
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    private JustOneWordBankProvider WordBankProvider { get; set; } = default!;
+
+    private string _joinUrl = string.Empty;
+
+    private bool CanStart => Snapshot is not null && Snapshot.Seats.Count is >= JustOneEngine.MinPlayers and <= JustOneEngine.MaxPlayers;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _joinUrl = Navigation.ToAbsoluteUri($"join/{RoomCode}").ToString();
+    }
+
+    private void Kick(Guid seatId) => Room?.RemoveSeat(seatId);
+
+    private void StartGame() =>
+        Room?.Mutate(s => s with { Game = JustOneEngine.StartGame(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) });
+
+    private void SubmitClue(string text) =>
+        Room?.Mutate(s => s with { Game = JustOneEngine.SubmitClue(s.Game, s.Seats, SeatId, text) });
+
+    private void CloseClueWriting() => Room?.Mutate(s => s with { Game = JustOneEngine.CloseClueWriting(s.Game) });
+
+    private void ToggleReviewGroup(int groupIndex) => Room?.Mutate(s => s with { Game = JustOneEngine.ToggleReviewGroup(s.Game, groupIndex) });
+
+    private void Reveal() => Room?.Mutate(s => s with { Game = JustOneEngine.Reveal(s.Game) });
+
+    private void Pass() => Room?.Mutate(s => s with { Game = JustOneEngine.Pass(s.Game, SeatId) });
+
+    private void SubmitGuess(string guess) => Room?.Mutate(s => s with { Game = JustOneEngine.SubmitGuess(s.Game, SeatId, guess) });
+
+    private void JudgeDecision(bool correct) => Room?.Mutate(s => s with { Game = JustOneEngine.JudgeDecision(s.Game, correct) });
+
+    private void AcknowledgeRoundResult() =>
+        Room?.Mutate(s => s with { Game = JustOneEngine.AcknowledgeRoundResult(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) });
+
+    private void StartNewGame() =>
+        Room?.Mutate(s => s with { Game = JustOneEngine.StartNewGame(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) });
+}

@@ -1,0 +1,63 @@
+@using DonitGames.Core.JustOne
+
+<div class="card">
+    <div class="card-header">
+        <p class="eyebrow">@(View.YouAreGuesser ? "Aan jou de beurt" : "De rader denkt na")</p>
+        <h1>🤔 Raden maar</h1>
+    </div>
+
+    <ul class="clue-review-list">
+        @foreach (var clue in View.Clues)
+        {
+            var name = View.Players.FirstOrDefault(p => p.SeatId == clue.SeatId)?.DisplayName ?? "?";
+            <li class="clue-review-item">
+                <span class="seat-name">@name</span>
+                <span class="clue-text">@clue.Text</span>
+            </li>
+        }
+    </ul>
+
+    @if (View.YouAreGuesser)
+    {
+        <div class="form-group">
+            <label class="form-label" for="guess">Jouw antwoord</label>
+            <input id="guess" class="form-control" @bind="_guess" @bind:event="onchange" autofocus />
+        </div>
+        <div class="action-bar">
+            <button type="button" class="btn btn-primary btn-lg" disabled="@string.IsNullOrWhiteSpace(_guess)" @onclick="Submit">
+                Raad
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="() => OnPass.InvokeAsync()">
+                Pas
+            </button>
+        </div>
+    }
+    else
+    {
+        <p class="subtle">Wachten op het antwoord…</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnSubmitGuess { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnPass { get; set; }
+
+    private string _guess = string.Empty;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_guess))
+        {
+            return;
+        }
+
+        await OnSubmitGuess.InvokeAsync(_guess);
+        _guess = string.Empty;
+    }
+}
