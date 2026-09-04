@@ -19,4 +19,10 @@
     <ProjectReference Include="..\..\src\DonitGames.Core\DonitGames.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The live word data, not a copy — integrity tests must fail the moment the source file does. -->
+    <None Include="..\..\src\DonitGames.Web\Data\WordPairs.yaml" Link="Data\WordPairs.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\DonitGames.Web\Data\JustOneWords.yaml" Link="Data\JustOneWords.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,46 @@
+@using DonitGames.Core.Undercover
+
+<div class="card">
+    <div class="outcome">
+        <span class="outcome-emoji" aria-hidden="true">🔎</span>
+        <p class="outcome-title">@(Eliminated?.DisplayName ?? "Iemand") is eraf</p>
+        @if (Eliminated is not null)
+        {
+            <p class="outcome-sub">@RoleLabel(Eliminated.RevealedRole)</p>
+        }
+    </div>
+
+    @if (Eliminated is not null && !string.IsNullOrEmpty(Eliminated.RevealedWord))
+    {
+        <div class="word-pair-grid">
+            <div class="word-pair-cell">
+                <p class="word-pair-label @(Eliminated.RevealedRole == UndercoverRole.Civilian ? "civilian" : "undercover")">
+                    Geheim woord
+                </p>
+                <p class="word-pair-value">@Eliminated.RevealedWord</p>
+            </div>
+        </div>
+    }
+
+    <div class="action-bar">
+        <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnAcknowledge.InvokeAsync()">
+            Verder
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public UndercoverPlayerView? Eliminated { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnAcknowledge { get; set; }
+
+    private static string RoleLabel(UndercoverRole? role) => role switch
+    {
+        UndercoverRole.Civilian => "Burger",
+        UndercoverRole.Undercover => "Undercover",
+        UndercoverRole.MrWhite => "Mr. White",
+        _ => "?",
+    };
+}

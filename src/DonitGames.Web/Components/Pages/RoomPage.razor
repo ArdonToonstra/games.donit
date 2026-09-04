@@ -1,0 +1,75 @@
+@page "/room/{Code}"
+@layout MainLayout
+@using DonitGames.Core.JustOne
+@using DonitGames.Core.Rooms
+@using DonitGames.Core.Rooms.Echo
+@using DonitGames.Core.Undercover
+@using DonitGames.Web.Components.Echo
+@using DonitGames.Web.Components.Undercover
+@using DonitGames.Web.Components.JustOne
+@using DonitGames.Web.Components.Rooms
+@using DonitGames.Web.Rooms
+
+<PageTitle>Kamer @Code — donit</PageTitle>
+
+@if (_seatId is { } seatId)
+{
+    @* Each game gets its own branch here, tried in turn — RoomPage itself never needs to know a
+       game's TState/TView beyond "does this registry have the code". *@
+    if (EchoRegistry.TryGet(Code, out _))
+    {
+        <EchoRoomShell RoomCode="@Code" SeatId="seatId" />
+    }
+    else if (UndercoverRegistry.TryGet(Code, out _))
+    {
+        <UndercoverRoomShell RoomCode="@Code" SeatId="seatId" />
+    }
+    else if (JustOneRegistry.TryGet(Code, out _))
+    {
+        <JustOneRoomShell RoomCode="@Code" SeatId="seatId" />
+    }
+    else
+    {
+        <RoomExpired />
+    }
+}
+
+@code {
+    [Parameter]
+    public string Code { get; set; } = string.Empty;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Inject]
+    private RoomRegistry<EchoState> EchoRegistry { get; set; } = default!;
+
+    [Inject]
+    private RoomRegistry<UndercoverState> UndercoverRegistry { get; set; } = default!;
+
+    [Inject]
+    private RoomRegistry<JustOneState> JustOneRegistry { get; set; } = default!;
+
+    [Inject]
+    private SeatCookieService Cookies { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    private Guid? _seatId;
+
+    protected override void OnInitialized()
+    {
+        var cookie = HttpContext is not null ? Cookies.Read(HttpContext.Request) : null;
+        if (cookie is null || !string.Equals(cookie.RoomCode, Code, StringComparison.Ordinal))
+        {
+            Navigation.NavigateTo($"/join/{Code}");
+            return;
+        }
+
+        // Whether the SEAT still actually exists is the shell's call (RoomMissing) — one source
+        // of truth instead of checking that here too. The registry lookups above are only to
+        // decide which shell to render.
+        _seatId = cookie.SeatId;
+    }
+}

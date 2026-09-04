@@ -1,0 +1,55 @@
+@using DonitGames.Core.Undercover
+
+<div class="card">
+    <div class="card-header">
+        <p class="eyebrow">Laatste kans</p>
+        <h1>🤍 Mr. White raadt</h1>
+    </div>
+
+    @if (YouAreTheGuesser)
+    {
+        <p class="subtle">Jij bent Mr. White. Raad het geheime woord van de burgers om alsnog te winnen.</p>
+        <div class="form-group">
+            <label class="form-label" for="guess">Jouw gok</label>
+            <input id="guess" class="form-control" @bind="_guess" @bind:event="onchange" autofocus />
+        </div>
+        <div class="action-bar">
+            <button type="button" class="btn btn-primary btn-lg btn-block" disabled="@string.IsNullOrWhiteSpace(_guess)" @onclick="Submit">
+                Raad
+            </button>
+        </div>
+    }
+    else
+    {
+        <p class="subtle">Mr. White is aan het raden…</p>
+    }
+
+    @if (LastResult == GuessResult.Incorrect)
+    {
+        <p class="form-error">Fout geraden — het spel gaat verder.</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public bool YouAreTheGuesser { get; set; }
+
+    [Parameter]
+    public GuessResult? LastResult { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnSubmitGuess { get; set; }
+
+    private string _guess = string.Empty;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_guess))
+        {
+            return;
+        }
+
+        await OnSubmitGuess.InvokeAsync(_guess);
+        _guess = string.Empty;
+    }
+}
