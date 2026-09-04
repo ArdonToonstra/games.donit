@@ -72,8 +72,36 @@ A player's identity is an HttpOnly `dg_seat` cookie set by a static-SSR join for
 that locks its screen for eight minutes reclaims its seat on the first paint after the reload.
 See `CLAUDE.md` for the reconnection contract and the rules that make it work.
 
+## Deployment
+
+**Live at `https://games.donit.be`**, self-hosted on a Raspberry Pi behind a Cloudflare Zero
+Trust Tunnel. On every push to `main`, `.github/workflows/build-and-publish.yml`:
+
+1. checks out this repo and the public `ArdonToonstra/undercover-game` repo,
+2. publishes the pass-and-play WASM app and stages it into `wwwroot/undercover/` (the same
+   by-hand steps as local Phase 5 testing, mechanized),
+3. runs `dotnet test`,
+4. builds and pushes a multi-arch-ready `linux/arm64` image to
+   `ghcr.io/ardontoonstra/donit-games` (tagged `latest` and `sha-<short>`).
+
+Deploys to the Pi stay **manual**, by design — a container restart drops every in-flight
+circuit, so nothing should redeploy the app mid-round without a human choosing that moment. From
+`donit-pi-server`:
+
+```bash
+docker --context rpi compose pull donit-games
+docker --context rpi compose up -d --no-deps donit-games
+```
+
+The container is reachable **only** through the Cloudflare Tunnel — it publishes no host port
+at all, sitting on an isolated Docker network (`games_net`) that only `cloudflared` shares. This
+app clears `KnownProxies`/`KnownIPNetworks` to trust Cloudflare's `X-Forwarded-*` headers, so
+nothing else needs to be able to reach it directly. See
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full research, the Cloudflare Access/WebSocket
+landmines, and everything discovered while actually standing this up.
+
 ## Docs
 
 - [`CLAUDE.md`](CLAUDE.md) — conventions and the non-negotiables. Read this first.
 - [`docs/IMPLEMENTATION-PLAN.md`](docs/IMPLEMENTATION-PLAN.md) — phased plan and progress.
-- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — Docker / Pi / Cloudflare. Deferred, not yet done.
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — Docker / Pi / Cloudflare, now live (see above).

@@ -1,11 +1,13 @@
 # Deployment
 
-> **Status: Cloudflare + networking done, image shipped by hand once (not yet via CI).**
-> `games.donit.be` is live and serving real traffic through the tunnel. What's left: commit
-> everything below so the real CI workflow produces a complete image (the one currently
-> running was built and pushed to the Pi's local Docker cache directly, skipping the
-> WASM-bundle staging step — `/undercover/` doesn't work on it yet), then swap to the
-> GHCR-pulled image once that lands.
+> **Status: done — `games.donit.be` is live**, running the real CI-built image
+> (`ghcr.io/ardontoonstra/donit-games:latest`), pulled anonymously by the Pi (the source repo
+> is public, and GHCR inherited that visibility — no separate package-visibility toggle or PAT
+> needed). All three games verified reachable through the tunnel: the portal, the WASM bundle
+> (`/undercover/`, including a hard-loaded deep link), and `WordPairs.yaml`/`JustOneWords.yaml`
+> all return real content through `https://games.donit.be`. Remaining follow-ups, not blockers:
+> the Pi's kernel doesn't enforce `mem_limit`/`cpus` yet (see below), and the temporary SSH
+> access below should be torn down once back on the home LAN.
 >
 > **Correction to earlier research:** `cloudflared` on this Pi runs as a **container**
 > (`cloudflare/cloudflared:latest`, on the default `bridge` network), not a native systemd
@@ -188,8 +190,12 @@ Two gotchas that will bite:
   `:sha-<short>`, `cache-from/to: type=gha`, `provenance: false`.
 - Then, from `donit-pi-server`: `docker --context rpi compose pull donit-games &&
   docker --context rpi compose up -d --no-deps donit-games`.
-- After the first run, set the GHCR package visibility to **Public** so the Pi pulls
-  anonymously — **no PAT, no `docker login`, no secret on the Pi at all**.
+- The repo was made **public** before the first successful run, and the GHCR package inherited
+  that visibility automatically — no separate "set package visibility" step was needed in
+  practice. The Pi pulls anonymously: **no PAT, no `docker login`, no secret on the Pi at all**.
+  (If the repo were ever private again, the package would need its visibility set explicitly in
+  its own package settings — GHCR visibility doesn't automatically follow repo visibility in
+  that direction.)
 - Add a `workflow_dispatch` trigger, since a change in `undercover-game` won't trigger this
   workflow and you'll want to rebuild the bundle by hand. (A `repository_dispatch` from the
   other repo is the tidier long-term answer; not worth it for v1.)
