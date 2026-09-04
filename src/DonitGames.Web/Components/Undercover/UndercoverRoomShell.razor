@@ -1,0 +1,136 @@
+@* Prerendering disabled — see the warning on RoomComponentBase. *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inherits RoomComponentBase<UndercoverState, UndercoverView>
+@using DonitGames.Core.Undercover
+@using DonitGames.Web.Components.Rooms
+@using DonitGames.Web.Rooms
+
+@if (RoomMissing)
+{
+    <RoomExpired />
+}
+else if (Snapshot is not null && View is not null && Room is not null)
+{
+    <div class="container">
+        @switch (View.Phase)
+        {
+            case UndercoverPhase.Lobby:
+                <LobbyPanel RoomCode="@RoomCode" JoinUrl="@_joinUrl" Seats="Snapshot.Seats" Presence="Snapshot.Presence" ViewerSeatId="SeatId">
+                    @if (View.YouAreHost)
+                    {
+                        <div class="action-bar">
+                            <button type="button" class="btn btn-primary btn-lg btn-block" disabled="@(!CanStart)" @onclick="StartGame">
+                                Start spel
+                            </button>
+                        </div>
+                        @if (!CanStart)
+                        {
+                            <p class="form-hint">Nodig: 3 tot 10 spelers (nu @Snapshot.Seats.Count).</p>
+                        }
+                    }
+                </LobbyPanel>
+                <HostTools Seats="Snapshot.Seats" ViewerSeatId="SeatId" OnKick="Kick" />
+                break;
+
+            case UndercoverPhase.CardPicking:
+                <CardPickingBoard Deck="View.Deck" YourRole="View.YourRole" YourSecretWord="View.YourSecretWord"
+                    LastResult="_lastPickResult" OnPick="Pick" />
+                break;
+
+            case UndercoverPhase.Discussion:
+                <DiscussionPanel RoundNumber="View.RoundNumber" SpeakingOrder="View.SpeakingOrder" Players="View.Players" DeadlineUtc="View.DiscussionDeadlineUtc"
+                    YourRole="View.YourRole" YourSecretWord="View.YourSecretWord" YouAreHost="View.YouAreHost" OnStartVoting="StartVoting" />
+                break;
+
+            case UndercoverPhase.Voting:
+                <VotingPanel Players="View.Players" ViewerSeatId="SeatId" HaveYouVoted="View.HaveYouVoted"
+                    VoteBreakdown="View.VoteBreakdown" TiedSeatIds="View.TiedSeatIds" YouAreHost="View.YouAreHost"
+                    OnVote="Vote" OnResolveTie="ResolveTie" OnForceEliminate="ForceEliminate" />
+                break;
+
+            case UndercoverPhase.EliminationReveal:
+                <EliminationRevealPanel Eliminated="View.Players.FirstOrDefault(p => p.SeatId == View.JustEliminatedSeatId)"
+                    OnAcknowledge="AcknowledgeElimination" />
+                break;
+
+            case UndercoverPhase.MrWhiteGuess:
+                <MrWhiteGuessPanel YouAreTheGuesser="View.YouAreTheGuesser" LastResult="_lastGuessResult" OnSubmitGuess="SubmitGuess" />
+                break;
+
+            case UndercoverPhase.Results:
+                <ResultsPanel Winner="View.Winner" Players="View.Players" YouAreHost="View.YouAreHost" OnNewGame="StartNewGame" />
+                break;
+        }
+    </div>
+}
+
+@code {
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    private UndercoverWordCategoryProvider WordCategoryProvider { get; set; } = default!;
+
+    private string _joinUrl = string.Empty;
+    private PickResult? _lastPickResult;
+    private GuessResult? _lastGuessResult;
+
+    private bool CanStart => Snapshot is not null && Snapshot.Seats.Count is >= UndercoverEngine.MinPlayers and <= UndercoverEngine.MaxPlayers;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _joinUrl = Navigation.ToAbsoluteUri($"join/{RoomCode}").ToString();
+    }
+
+    private void Kick(Guid seatId) => Room?.RemoveSeat(seatId);
+
+    private void StartGame() =>
+        Room?.Mutate(s => s with { Game = UndercoverEngine.StartGame(s.Game, s.Seats, WordCategoryProvider.NederlandseWoorden, Random.Shared) });
+
+    private void Pick(int cardIndex)
+    {
+        if (Room is null)
+        {
+            return;
+        }
+
+        var (_, result) = Room.Mutate(s =>
+        {
+            var (game, pickResult) = UndercoverEngine.PickCard(s.Game, SeatId, cardIndex, Random.Shared);
+            return (s with { Game = game }, pickResult);
+        });
+        _lastPickResult = result;
+    }
+
+    private void StartVoting() => Room?.Mutate(s => s with { Game = UndercoverEngine.StartVoting(s.Game) });
+
+    private void Vote(Guid targetSeatId) =>
+        Room?.Mutate(s => s with { Game = UndercoverEngine.CastVote(s.Game, SeatId, targetSeatId).State });
+
+    private void ResolveTie(Guid seatId) => Room?.Mutate(s => s with { Game = UndercoverEngine.ResolveTie(s.Game, seatId) });
+
+    private void ForceEliminate(Guid seatId) => Room?.Mutate(s => s with { Game = UndercoverEngine.ForceEliminate(s.Game, seatId) });
+
+    private void AcknowledgeElimination() =>
+        Room?.Mutate(s => s with { Game = UndercoverEngine.AcknowledgeElimination(s.Game, Random.Shared) });
+
+    private void SubmitGuess(string guess)
+    {
+        if (Room is null)
+        {
+            return;
+        }
+
+        var (_, result) = Room.Mutate(s =>
+        {
+            var (game, guessResult) = UndercoverEngine.SubmitMrWhiteGuess(s.Game, SeatId, guess, Random.Shared);
+            return (s with { Game = game }, guessResult);
+        });
+        _lastGuessResult = result;
+    }
+
+    private void StartNewGame() =>
+        Room?.Mutate(s => s with { Game = UndercoverEngine.StartNewGame(s.Game, s.Seats, WordCategoryProvider.NederlandseWoorden, Random.Shared) });
+}

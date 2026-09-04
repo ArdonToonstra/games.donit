@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DonitGames.Core/DonitGames.Core.csproj" />
+    <Project Path="src/DonitGames.Web/DonitGames.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DonitGames.Core.Tests/DonitGames.Core.Tests.csproj" />
+  </Folder>
+</Solution>

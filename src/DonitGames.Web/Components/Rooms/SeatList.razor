@@ -1,0 +1,35 @@
+@* Seats/presence are already game-agnostic Core types, so this is shared as-is by every game —
+   no per-game view translation needed for "who's here". *@
+@using DonitGames.Core.Rooms
+
+<ul class="seat-list">
+    @foreach (var seat in Seats)
+    {
+        var connected = Presence.TryGetValue(seat.SeatId, out var presence) && presence.IsConnected;
+        <li class="seat-item">
+            <span class="presence-dot @(connected ? "is-connected" : "is-away")" aria-hidden="true"></span>
+            <span class="seat-name">
+                @seat.DisplayName
+                @if (seat.SeatId == ViewerSeatId)
+                {
+                    <span class="subtle">(jij)</span>
+                }
+            </span>
+            @if (seat.IsHost)
+            {
+                <span class="seat-host-badge">Host</span>
+            }
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Seat> Seats { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyDictionary<Guid, SeatPresence> Presence { get; set; } = new Dictionary<Guid, SeatPresence>();
+
+    [Parameter]
+    public Guid ViewerSeatId { get; set; }
+}

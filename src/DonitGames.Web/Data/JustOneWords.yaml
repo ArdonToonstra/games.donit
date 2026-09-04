@@ -1,0 +1,154 @@
+# Just One word bank — Dutch only (games.donit UI has no localisation framework).
+# One word per round; clue-givers write a single clue, the guesser tries to name it.
+# ~120 seeded here; 300+ eventually per docs/IMPLEMENTATION-PLAN.md.
+words:
+  # Dieren
+  - "Olifant"
+  - "Giraffe"
+  - "Pinguïn"
+  - "Vlinder"
+  - "Kangoeroe"
+  - "Egel"
+  - "Konijn"
+  - "Vos"
+  - "Uil"
+  - "Zwaan"
+  - "Krokodil"
+  - "Dolfijn"
+  - "Spin"
+  - "Mier"
+  - "Kikker"
+  - "Schildpad"
+
+  # Eten en drinken
+  - "Pannenkoek"
+  - "Frikandel"
+  - "Stroopwafel"
+  - "Appeltaart"
+  - "Kroket"
+  - "Chocolade"
+  - "Aardbei"
+  - "Citroen"
+  - "Pindakaas"
+  - "Hagelslag"
+  - "Erwtensoep"
+  - "Bitterbal"
+  - "Drop"
+  - "Karnemelk"
+  - "Speculaas"
+
+  # Huis en huishouden
+  - "Wasmachine"
+  - "Stofzuiger"
+  - "Paraplu"
+  - "Kussen"
+  - "Ladder"
+  - "Bezem"
+  - "Kaars"
+  - "Spiegel"
+  - "Deken"
+  - "Sleutel"
+  - "Emmer"
+  - "Wekker"
+
+  # Natuur en weer
+  - "Regenboog"
+  - "Sneeuwvlok"
+  - "Onweer"
+  - "Vulkaan"
+  - "Woestijn"
+  - "Waterval"
+  - "Duin"
+  - "Gletsjer"
+  - "Zonsondergang"
+  - "Mist"
+
+  # Vervoer
+  - "Fietspomp"
+  - "Zeilboot"
+  - "Helikopter"
+  - "Onderzeeër"
+  - "Rolschaats"
+  - "Kabelbaan"
+  - "Brandweerwagen"
+  - "Ambulance"
+  - "Ballon"
+  - "Step"
+
+  # Beroepen
+  - "Bakker"
+  - "Kapper"
+  - "Tandarts"
+  - "Brandweerman"
+  - "Timmerman"
+  - "Loodgieter"
+  - "Notaris"
+  - "Postbode"
+  - "Scheidsrechter"
+  - "Imker"
+
+  # Lichaam en gezondheid
+  - "Wenkbrauw"
+  - "Sleutelbeen"
+  - "Blindedarm"
+  - "Rimpel"
+  - "Gips"
+  - "Pleister"
+
+  # Kleding
+  - "Sjaal"
+  - "Handschoen"
+  - "Regenjas"
+  - "Zwembroek"
+  - "Snowboard"
+  - "Wanten"
+
+  # Sport en spel
+  - "Schaatsen"
+  - "Trampoline"
+  - "Dammen"
+  - "Puzzel"
+  - "Vlieger"
+  - "Hindernisbaan"
+  - "Estafette"
+  - "Boogschieten"
+
+  # Gebouwen en plekken
+  - "Vuurtoren"
+  - "Kasteel"
+  - "Molen"
+  - "Bibliotheek"
+  - "Pretpark"
+  - "Kerkhof"
+  - "Dierentuin"
+  - "Tunnel"
+
+  # Feest en cultuur
+  - "Vuurwerk"
+  - "Slinger"
+  - "Carnaval"
+  - "Sinterklaas"
+  - "Kroonluchter"
+  - "Cadeaupapier"
+
+  # Muziek en instrumenten
+  - "Accordeon"
+  - "Trompet"
+  - "Xylofoon"
+  - "Doedelzak"
+
+  # Techniek en gereedschap
+  - "Schroevendraaier"
+  - "Kruiwagen"
+  - "Zaklamp"
+  - "Magneet"
+  - "Batterij"
+  - "Antenne"
+
+  # Ruimte en abstract
+  - "Melkweg"
+  - "Kompas"
+  - "Schaduw"
+  - "Echo"
+  - "Spiegelbeeld"
+  - "Sneeuwpop"

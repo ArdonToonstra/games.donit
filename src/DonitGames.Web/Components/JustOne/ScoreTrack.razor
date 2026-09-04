@@ -1,0 +1,14 @@
+@using DonitGames.Core.JustOne
+
+<div class="score-track" role="img" aria-label="@PipsRemaining van de @JustOneState.StartingPips kaarten over">
+    @for (var i = 0; i < JustOneState.StartingPips; i++)
+    {
+        <span class="score-pip @(i < PipsRemaining ? "is-filled" : "is-spent")"></span>
+    }
+</div>
+<p class="timer-label">@PipsRemaining van de @JustOneState.StartingPips kaarten over</p>
+
+@code {
+    [Parameter]
+    public int PipsRemaining { get; set; }
+}

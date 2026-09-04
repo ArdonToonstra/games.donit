@@ -1,0 +1,96 @@
+@using DonitGames.Core.Undercover
+@implements IDisposable
+
+<div class="card">
+    <div class="card-header">
+        <p class="eyebrow">Ronde @RoundNumber</p>
+        <h1>💬 Discussie</h1>
+    </div>
+
+    @if (DeadlineUtc is not null)
+    {
+        <div class="timer">
+            <div>
+                <div class="timer-value">@FormatRemaining()</div>
+                <div class="timer-label">tijd over</div>
+            </div>
+        </div>
+    }
+
+    @if (YourRole is not null)
+    {
+        <div class="word-display @(YourRole == UndercoverRole.MrWhite ? "is-mrwhite" : "")">
+            @if (YourRole == UndercoverRole.MrWhite)
+            {
+                <span class="word-category">Jij bent</span>
+                <span class="word-text">Mr. White</span>
+            }
+            else
+            {
+                <span class="word-category">Jouw geheime woord</span>
+                <span class="word-text">@YourSecretWord</span>
+            }
+        </div>
+    }
+
+    <p class="eyebrow">Spreekvolgorde</p>
+    <ol class="speaking-order">
+        @foreach (var seatId in SpeakingOrder)
+        {
+            var player = Players.FirstOrDefault(p => p.SeatId == seatId);
+            <li>@(player?.DisplayName ?? "?")</li>
+        }
+    </ol>
+
+    @if (YouAreHost)
+    {
+        <div class="action-bar">
+            <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnStartVoting.InvokeAsync()">
+                Start stemronde
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RoundNumber { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Guid> SpeakingOrder { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UndercoverPlayerView> Players { get; set; } = [];
+
+    [Parameter]
+    public DateTimeOffset? DeadlineUtc { get; set; }
+
+    [Parameter]
+    public UndercoverRole? YourRole { get; set; }
+
+    [Parameter]
+    public string? YourSecretWord { get; set; }
+
+    [Parameter]
+    public bool YouAreHost { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnStartVoting { get; set; }
+
+    private System.Timers.Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += (_, _) => InvokeAsync(StateHasChanged);
+        _timer.Start();
+    }
+
+    private string FormatRemaining()
+    {
+        var remaining = DeadlineUtc!.Value - DateTimeOffset.UtcNow;
+        return remaining <= TimeSpan.Zero ? "Tijd om!" : $"{(int)remaining.TotalMinutes}:{remaining.Seconds:D2}";
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

@@ -1,0 +1,72 @@
+@page "/just-one"
+@layout MainLayout
+@using System.ComponentModel.DataAnnotations
+@using DonitGames.Core.JustOne
+@using DonitGames.Core.Rooms
+@using DonitGames.Web.Rooms
+
+<PageTitle>Just One — donit</PageTitle>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <p class="eyebrow">Just One</p>
+            <h1>💡 Nieuwe kamer</h1>
+            <p class="subtle">
+                Ieder z'n telefoon, 3 tot 8 spelers. Start een kamer en deel de code of QR-code.
+            </p>
+        </div>
+
+        <EditForm Model="Model" FormName="just-one-create" OnValidSubmit="HandleCreate" method="post">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <label class="form-label" for="displayName">Jouw naam</label>
+                <InputText id="displayName" class="form-control" @bind-Value="Model!.DisplayName" autofocus />
+                <ValidationMessage For="() => Model!.DisplayName" />
+            </div>
+            <div class="action-bar">
+                <button type="submit" class="btn btn-primary btn-lg btn-block">Nieuwe kamer starten</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private CreateModel? Model { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Inject]
+    private RoomRegistry<JustOneState> JustOneRegistry { get; set; } = default!;
+
+    [Inject]
+    private SeatCookieService Cookies { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    protected override void OnInitialized() => Model ??= new CreateModel();
+
+    private void HandleCreate()
+    {
+        if (HttpContext is null)
+        {
+            return;
+        }
+
+        var room = JustOneRegistry.Create(JustOneState.Initial);
+        var seat = new Seat(Guid.NewGuid(), Model!.DisplayName.Trim(), IsHost: true, DateTimeOffset.UtcNow);
+        room.AddSeat(seat);
+        Cookies.Set(HttpContext.Response, room.Code, seat.SeatId);
+        Navigation.NavigateTo($"/room/{room.Code}");
+    }
+
+    private sealed class CreateModel
+    {
+        [Required(ErrorMessage = "Vul je naam in.")]
+        [StringLength(24, MinimumLength = 1, ErrorMessage = "Gebruik 1 tot 24 tekens.")]
+        public string DisplayName { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,35 @@
+@using DonitGames.Core.Rooms
+
+<div class="card lobby-panel">
+    <div class="card-header">
+        <p class="eyebrow">Kamercode</p>
+        <h2 class="room-code">@RoomCode</h2>
+        <p class="subtle">Scan de QR-code of ga naar <strong>@JoinUrl</strong></p>
+    </div>
+
+    <QrCodeRenderer Url="@JoinUrl" />
+
+    <SeatList Seats="Seats" Presence="Presence" ViewerSeatId="ViewerSeatId" />
+
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string RoomCode { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string JoinUrl { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Seat> Seats { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyDictionary<Guid, SeatPresence> Presence { get; set; } = new Dictionary<Guid, SeatPresence>();
+
+    [Parameter]
+    public Guid ViewerSeatId { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

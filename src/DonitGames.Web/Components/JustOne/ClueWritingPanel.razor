@@ -1,0 +1,81 @@
+@using DonitGames.Core.JustOne
+
+@if (View.YouAreGuesser)
+{
+    <PeekShield />
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <p class="eyebrow">Geheim woord</p>
+            <h1>✏️ Schrijf een hint</h1>
+        </div>
+
+        <div class="word-display">
+            <span class="word-category">Het woord is</span>
+            <span class="word-text">@View.SecretWord</span>
+        </div>
+
+        @if (View.YourClueText is null)
+        {
+            <div class="form-group">
+                <label class="form-label" for="clue">Jouw hint (één woord)</label>
+                <input id="clue" class="form-control" @bind="_clue" @bind:event="onchange" autofocus />
+            </div>
+            <div class="action-bar">
+                <button type="button" class="btn btn-primary btn-lg btn-block" disabled="@string.IsNullOrWhiteSpace(_clue)" @onclick="Submit">
+                    Verzenden
+                </button>
+            </div>
+        }
+        else
+        {
+            <p class="subtle">Jouw hint: <strong>@View.YourClueText</strong> — wachten op de rest…</p>
+        }
+
+        <p class="eyebrow">Wie is klaar?</p>
+        <ul class="seat-list">
+            @foreach (var player in View.Players.Where(p => !p.IsGuesser))
+            {
+                <li class="seat-item">
+                    <span class="presence-dot @(player.HasSubmittedClue ? "is-connected" : "is-away")" aria-hidden="true"></span>
+                    <span class="seat-name">@player.DisplayName</span>
+                </li>
+            }
+        </ul>
+
+        @if (View.YouAreJudge)
+        {
+            <div class="action-bar">
+                <button type="button" class="btn btn-outline-secondary btn-block" @onclick="() => OnCloseClueWriting.InvokeAsync()">
+                    Verder (ook als niet iedereen klaar is)
+                </button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnSubmitClue { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnCloseClueWriting { get; set; }
+
+    private string _clue = string.Empty;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_clue))
+        {
+            return;
+        }
+
+        await OnSubmitClue.InvokeAsync(_clue);
+        _clue = string.Empty;
+    }
+}

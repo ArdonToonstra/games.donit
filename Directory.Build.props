@@ -1,0 +1,28 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      Both of the following are DELIBERATE overrides. See docs/DEPLOYMENT.md and CLAUDE.md.
+
+      InvariantGlobalization: some ASP.NET templates default this to true. It MUST stay false.
+      string.Normalize(NormalizationForm.FormD) is the core of the Just One duplicate
+      normaliser and throws PlatformNotSupportedException in globalization-invariant mode,
+      and TimeZoneInfo.FindSystemTimeZoneById("Europe/Brussels") throws too.
+
+      ServerGarbageCollection: the Web SDK defaults this to true, which allocates one GC heap
+      per core. On a 4-core Raspberry Pi already running five containers that is pure waste
+      for ~30 concurrent users. Workstation GC keeps the footprint small.
+    -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
+</Project>

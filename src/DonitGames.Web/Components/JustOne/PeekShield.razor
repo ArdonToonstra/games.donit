@@ -1,0 +1,15 @@
+@* The guesser's screen whenever they must see nothing yet. Not a UI convenience — the parent
+   never even sends this viewer the word/clue text at these phases (JustOneSession.ViewFor), so
+   there is nothing to accidentally leak here either. *@
+<div class="card peek-shield">
+    <div class="card-header">
+        <p class="eyebrow">Jij raadt deze ronde</p>
+        <h1>🙈 @Message</h1>
+        <p class="subtle">Jij mag het woord en de hints nog niet zien.</p>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Message { get; set; } = "Wachten tot de anderen klaar zijn…";
+}
