@@ -1,0 +1,51 @@
+@* Renders nothing; holds a screen wake lock for as long as it is on the page. Drop it into a
+   room shell so a player who is waiting on other people doesn't get dropped by their own
+   screen timeout. See wwwroot/js/keep-awake.js for why this is worth the interop. *@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@code {
+    private IJSObjectReference? _module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/keep-awake.js");
+            await _module.InvokeVoidAsync("enable");
+        }
+        catch (JSDisconnectedException)
+        {
+            // The phone locked before the module finished loading — the very case this is
+            // meant to prevent, and nothing worth surfacing to the player.
+        }
+        catch (JSException)
+        {
+            // No wake lock available (insecure context, unsupported browser). Non-fatal.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("disable");
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit already gone; the browser released the lock with the page.
+        }
+        catch (JSException)
+        {
+        }
+    }
+}

@@ -1,0 +1,108 @@
+@* Table mode's hold-up screen. The phone stops being something you look at and becomes
+   something you show, so this is the one screen in the app that is deliberately almost empty:
+   the clue, and the least chrome that still lets you get out of it.
+
+   Sideways by default. Rotating in CSS rather than trusting the device to rotate is not a
+   detail — most phones at a party are rotation-locked in portrait, and the whole point is that
+   the word runs along the long edge where it is biggest. *@
+@using DonitGames.Core.JustOne
+
+@if (View.YouAreGuesser)
+{
+    <div class="card">
+        <div class="card-header">
+            <p class="eyebrow">Ronde @View.RoundNumber</p>
+            <h1>👀 Kijk rond</h1>
+            <p class="subtle">
+                De anderen houden hun hint omhoog. Zeg je antwoord hardop — daarna beslist de
+                tafel of het goed was.
+            </p>
+        </div>
+
+        <div class="action-bar is-inline">
+            <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnFinishGuessing.InvokeAsync()">
+                Ik heb geraden
+            </button>
+        </div>
+
+        <div class="jo-pass">
+            @if (_confirmPass)
+            {
+                <p class="form-hint center">Passen kost één kaart. Zeker weten?</p>
+                <div class="action-bar is-inline">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="() => _confirmPass = false">Terug</button>
+                    <button type="button" class="btn btn-danger" @onclick="() => OnPass.InvokeAsync()">Ja, pas</button>
+                </div>
+            }
+            else
+            {
+                <button type="button" class="btn btn-outline-secondary btn-sm btn-block" @onclick="() => _confirmPass = true">
+                    Pas deze ronde
+                </button>
+            }
+        </div>
+    </div>
+}
+else if (View.YourClueText is null)
+{
+    @* Missed the deadline (the judge closed clue-writing early). Nothing to hold up. *@
+    <div class="card peek-shield">
+        <div class="card-header">
+            <p class="eyebrow">Ronde @View.RoundNumber</p>
+            <h1>🤐 Geen hint</h1>
+            <p class="subtle">Je was niet op tijd deze ronde. Kijk mee met de rest.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="clue-banner @(_upright ? "is-upright" : "is-sideways")">
+        <span class="clue-banner-text" style="--clue-scale: @ClueScale">@View.YourClueText</span>
+    </div>
+
+    <div class="clue-banner-tools">
+        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => _upright = !_upright">
+            @(_upright ? "Liggend" : "Rechtop")
+        </button>
+        <span class="subtle">Houd je telefoon omhoog</span>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback OnFinishGuessing { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnPass { get; set; }
+
+    private bool _upright;
+    private bool _confirmPass;
+    private int _renderedRound = -1;
+
+    protected override void OnParametersSet()
+    {
+        if (View.RoundNumber != _renderedRound)
+        {
+            _renderedRound = View.RoundNumber;
+            _confirmPass = false;
+        }
+    }
+
+    // Sized from the character count rather than one clamp(): the text is rotated, so what it
+    // has to fit into is the viewport's *height*, and a 4-letter clue and an 18-letter one want
+    // very different sizes to each fill it. Unitless, because the stylesheet multiplies it by
+    // vh and then again by dvh — the second only lands on browsers that have dvh, which is the
+    // one that gets the phone's real visible height rather than its URL-bar-inclusive one.
+    private string ClueScale => (View.YourClueText?.Length ?? 0) switch
+    {
+        <= 4 => "17",
+        <= 6 => "14",
+        <= 9 => "11",
+        <= 13 => "8",
+        <= 18 => "6",
+        _ => "4.6",
+    };
+}

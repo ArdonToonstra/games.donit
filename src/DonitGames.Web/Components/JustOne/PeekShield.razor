@@ -1,15 +1,32 @@
 @* The guesser's screen whenever they must see nothing yet. Not a UI convenience — the parent
    never even sends this viewer the word/clue text at these phases (JustOneSession.ViewFor), so
-   there is nothing to accidentally leak here either. *@
+   there is nothing to accidentally leak here either.
+
+   The progress line is safe for the same reason: a count of who has finished typing carries no
+   information about the word or any clue, and without it the guesser is left staring at a
+   frozen screen with no way to tell a busy table from a dead one. *@
 <div class="card peek-shield">
     <div class="card-header">
         <p class="eyebrow">Jij raadt deze ronde</p>
         <h1>🙈 @Message</h1>
         <p class="subtle">Jij mag het woord en de hints nog niet zien.</p>
     </div>
+
+    @if (Total > 0)
+    {
+        <p class="jo-progress-count">@Submitted <span>/</span> @Total</p>
+        <p class="timer-label">hints binnen</p>
+    }
 </div>
 
 @code {
     [Parameter]
     public string Message { get; set; } = "Wachten tot de anderen klaar zijn…";
+
+    /// <summary>Zero disables the counter — used by the phases where nobody is typing.</summary>
+    [Parameter]
+    public int Total { get; set; }
+
+    [Parameter]
+    public int Submitted { get; set; }
 }

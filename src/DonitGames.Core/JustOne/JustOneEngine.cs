@@ -13,15 +13,64 @@ public static class JustOneEngine
     public const int MinPlayers = 3;
     public const int MaxPlayers = 8;
 
-    public static JustOneState StartGame(JustOneState state, IReadOnlyList<Seat> seats, IReadOnlyList<string> words, Random rng) =>
-        BeginRound(state, seats, words, rng);
+    /// <summary>A clue is one word. The cap is defensive, not a rule: the input already carries
+    /// a matching <c>maxlength</c>, but a paste on a phone keyboard routes around that, and a
+    /// 400-character "clue" would wreck every other player's layout mid-round.</summary>
+    public const int MaxClueLength = 24;
+
+    public const int MaxGuessLength = 32;
+
+    /// <summary>Whether <see cref="StartGame"/>/<see cref="StartNewGame"/> would be legal right
+    /// now. Callers check this *inside* their mutator, against the room's current seats — a
+    /// button's disabled state is computed from a snapshot that may already be one kick old.</summary>
+    public static bool CanStart(IReadOnlyList<Seat> seats)
+    {
+        ArgumentNullException.ThrowIfNull(seats);
+        return seats.Count is >= MinPlayers and <= MaxPlayers;
+    }
+
+    /// <summary>Lobby only. The two modes have different phase sets, so a switch mid-game would
+    /// leave whoever is mid-phase on a screen the new mode never reaches.</summary>
+    public static JustOneState SetMode(JustOneState state, JustOneMode mode)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return state.Phase is JustOnePhase.Lobby or JustOnePhase.GameResults ? state with { Mode = mode } : state;
+    }
+
+    public static JustOneState StartGame(JustOneState state, IReadOnlyList<Seat> seats, IReadOnlyList<string> words, Random rng)
+    {
+        RequireStartableTable(seats);
+        return BeginRound(state, seats, words, rng);
+    }
 
     /// <summary>Same room, same seats/scores lineage — resets the pip track and tally, keeps
     /// <see cref="JustOneState.UsedWords"/> growing (no repeats across games in one sitting,
     /// same reasoning as Undercover's <c>UsedPairs</c>) and keeps the guesser rotation going
     /// rather than always restarting at seat 0.</summary>
-    public static JustOneState StartNewGame(JustOneState state, IReadOnlyList<Seat> seats, IReadOnlyList<string> words, Random rng) =>
-        BeginRound(state with { PipsRemaining = JustOneState.StartingPips, CorrectCount = 0, RoundsPlayed = 0 }, seats, words, rng);
+    public static JustOneState StartNewGame(JustOneState state, IReadOnlyList<Seat> seats, IReadOnlyList<string> words, Random rng)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        RequireStartableTable(seats);
+        return BeginRound(
+            state with { PipsRemaining = JustOneState.StartingPips, CorrectCount = 0, RoundsPlayed = 0 },
+            seats,
+            words,
+            rng);
+    }
+
+    /// <summary>The full lobby range, enforced only where a game is *started*. Guard with
+    /// <see cref="CanStart"/> first — reaching this exception from a UI path means a button was
+    /// enabled against a stale snapshot.</summary>
+    private static void RequireStartableTable(IReadOnlyList<Seat> seats)
+    {
+        ArgumentNullException.ThrowIfNull(seats);
+
+        if (!CanStart(seats))
+        {
+            throw new ArgumentOutOfRangeException(nameof(seats), seats.Count, $"Just One supports {MinPlayers} to {MaxPlayers} players.");
+        }
+    }
 
     private static JustOneState BeginRound(JustOneState state, IReadOnlyList<Seat> seats, IReadOnlyList<string> words, Random rng)
     {
@@ -30,14 +79,24 @@ public static class JustOneEngine
         ArgumentNullException.ThrowIfNull(words);
         ArgumentNullException.ThrowIfNull(rng);
 
-        if (seats.Count is < MinPlayers or > MaxPlayers)
+        // Only the floor, not CanStart's full range: the ceiling is a lobby rule about how big a
+        // game to *start*, and enforcing it here would end a running game the moment a ninth
+        // person wandered in off the join link. Every caller that can reach an empty table
+        // guards this already, so a violation here is a bug rather than a table state.
+        if (seats.Count < MinPlayers)
         {
-            throw new ArgumentOutOfRangeException(nameof(seats), seats.Count, $"Just One supports {MinPlayers} to {MaxPlayers} players.");
+            throw new ArgumentOutOfRangeException(nameof(seats), seats.Count, $"Just One needs at least {MinPlayers} players.");
         }
 
         var guesserSeatId = PickNextGuesser(state, seats);
-        var excluded = new HashSet<string>(state.UsedWords);
-        var word = JustOneWordBank.Draw(words, rng, excluded);
+
+        // The bank running dry mid-sitting used to throw out of Mutate and take the tapping
+        // player's circuit down with it, leaving the room wedged on RoundResult with no way
+        // forward. Recycling is the only sane recovery: start a fresh no-repeat window rather
+        // than refuse to deal a round.
+        var used = new HashSet<string>(state.UsedWords);
+        var exhausted = words.All(used.Contains);
+        var word = JustOneWordBank.Draw(words, rng, exhausted ? new HashSet<string>() : used);
 
         return state with
         {
@@ -49,7 +108,7 @@ public static class JustOneEngine
             ReviewGroups = [],
             GuesserAttempt = null,
             LastOutcome = null,
-            UsedWords = [.. state.UsedWords, word],
+            UsedWords = exhausted ? [word] : [.. state.UsedWords, word],
             RoundNumber = state.RoundNumber + 1,
         };
     }
@@ -65,10 +124,20 @@ public static class JustOneEngine
         return lastIndex < 0 ? seats[0].SeatId : seats[(lastIndex + 1) % seats.Count].SeatId;
     }
 
-    /// <remarks>Auto-advances to <see cref="JustOnePhase.DuplicateReview"/> once every active
-    /// non-guesser seat in <paramref name="seats"/> has submitted — mirrors <c>CastVote</c>'s
-    /// auto-resolve in the Undercover engine. <see cref="CloseClueWriting"/> is the host/judge
-    /// override for the <c>Away</c> clue-giver case.</remarks>
+    /// <summary>Collapses every run of whitespace (a pasted newline included) to a single space
+    /// and clips to <paramref name="maxLength"/>, so what the room renders is always one short
+    /// line however it was typed or pasted.</summary>
+    private static string Sanitize(string text, int maxLength)
+    {
+        var collapsed = string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return collapsed.Length <= maxLength ? collapsed : collapsed[..maxLength].TrimEnd();
+    }
+
+    /// <remarks>Auto-closes clue-writing once every active non-guesser seat in
+    /// <paramref name="seats"/> has submitted — mirrors <c>CastVote</c>'s auto-resolve in the
+    /// Undercover engine. Where that lands depends on the mode (see
+    /// <see cref="CloseClueWriting"/>), which is also the host/judge override for the
+    /// <c>Away</c> clue-giver case.</remarks>
     public static JustOneState SubmitClue(JustOneState state, IReadOnlyList<Seat> seats, Guid seatId, string text)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -80,7 +149,7 @@ public static class JustOneEngine
             return state;
         }
 
-        var trimmed = text.Trim();
+        var trimmed = Sanitize(text, MaxClueLength);
         if (trimmed.Length == 0)
         {
             return state;
@@ -107,6 +176,16 @@ public static class JustOneEngine
             return state;
         }
 
+        if (state.Mode == JustOneMode.Table)
+        {
+            // No DuplicateDetector pass at all in table mode — five clues held up side by side
+            // is a better duplicate check than any edit-distance threshold, and it is the part
+            // of the game people actually enjoy arguing about.
+            return state.Clues.Count == 0
+                ? ApplyOutcome(state, RoundOutcome.NoClues)
+                : state with { Phase = JustOnePhase.ClueReveal };
+        }
+
         var analysis = DuplicateDetector.Analyze(state.Clues);
         return state with
         {
@@ -114,6 +193,30 @@ public static class JustOneEngine
             AutoCancelledSeatIds = analysis.AutoCancelledSeatIds,
             ReviewGroups = analysis.ReviewGroups,
         };
+    }
+
+    /// <summary>Table mode: the guesser has said their answer out loud and hands the round back
+    /// to the table. Theirs is the one phone not being held up, so theirs is the button.</summary>
+    public static JustOneState FinishGuessing(JustOneState state, Guid guesserSeatId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return state.Phase != JustOnePhase.ClueReveal || state.GuesserSeatId != guesserSeatId
+            ? state
+            : state with { Phase = JustOnePhase.TableVerdict };
+    }
+
+    /// <summary>Table mode: any clue-giver records what the table decided. Deliberately not
+    /// restricted to the judge — in this mode the phones have just come down and whoever is
+    /// holding theirs closest taps it, which is also one less seat that can wedge the round by
+    /// being offline.</summary>
+    public static JustOneState RecordTableVerdict(JustOneState state, Guid seatId, bool correct)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return state.Phase != JustOnePhase.TableVerdict || seatId == state.GuesserSeatId
+            ? state
+            : ApplyOutcome(state, correct ? RoundOutcome.Correct : RoundOutcome.Incorrect);
     }
 
     public static JustOneState ToggleReviewGroup(JustOneState state, int groupIndex)
@@ -152,10 +255,11 @@ public static class JustOneEngine
             .Concat(state.ReviewGroups.Where(g => g.ManuallyCancelled).SelectMany(g => g.SeatIds))
             .ToHashSet();
 
+    /// <summary>The guesser giving up, from whichever phase their mode puts them in.</summary>
     public static JustOneState Pass(JustOneState state, Guid guesserSeatId)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return state.Phase != JustOnePhase.Guessing || state.GuesserSeatId != guesserSeatId
+        return state.Phase is not (JustOnePhase.Guessing or JustOnePhase.ClueReveal) || state.GuesserSeatId != guesserSeatId
             ? state
             : ApplyOutcome(state, RoundOutcome.Passed);
     }
@@ -173,7 +277,7 @@ public static class JustOneEngine
             return state;
         }
 
-        var attempt = guess.Trim();
+        var attempt = Sanitize(guess, MaxGuessLength);
         if (attempt.Length == 0)
         {
             return state;
@@ -220,28 +324,59 @@ public static class JustOneEngine
             return state;
         }
 
-        return state.PipsRemaining <= 0
+        // The pip track is the normal end. Seats dropping below MinPlayers is the other one:
+        // this button is tapped by *anyone*, so letting BeginRound throw here would kill that
+        // player's circuit and strand the room on a screen whose only button is now fatal.
+        // Only the lower bound is checked — a ninth player wandering in mid-game shouldn't end
+        // the sitting, they just join the round.
+        return state.PipsRemaining <= 0 || seats.Count < MinPlayers
             ? state with { Phase = JustOnePhase.GameResults }
             : BeginRound(state, seats, words, rng);
     }
 
-    /// <summary>Computed, not stored — the room host, unless they're this round's guesser (can't
-    /// judge their own guess), in which case it falls to the first other active seat.</summary>
+    /// <summary>The host's way out of a round nobody can finish — a judge whose phone is dead,
+    /// a guesser who left, or simply a table that wants to stop. Always available while a game
+    /// is running, because every *other* control in this engine belongs to a specific seat that
+    /// may be the one that's gone.</summary>
+    public static JustOneState EndGame(JustOneState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return state.Phase is JustOnePhase.Lobby or JustOnePhase.GameResults
+            ? state
+            : state with { Phase = JustOnePhase.GameResults };
+    }
+
+    /// <summary>
+    /// Computed, not stored — the room host, unless they're this round's guesser (can't judge
+    /// their own guess) or their phone is currently gone, in which case it falls to another seat.
+    ///
+    /// Connectedness is part of the choice rather than a nicety: Reveal and the correct/wrong
+    /// call are the only ways out of DuplicateReview and JudgeReview, so pinning them to a seat
+    /// that isn't there wedges the whole room. The judge can therefore change hands mid-phase
+    /// when someone's screen locks; that is the intended trade — the button moving is recoverable,
+    /// a room with no button is not. When nobody is connected (a snapshot with no presence at
+    /// all, as in tests) it degrades to the plain host-then-first-seat order.
+    /// </summary>
     public static Guid? Judge(RoomSnapshot<JustOneState> snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        var host = snapshot.Seats.FirstOrDefault(s => s.IsHost);
-        if (host is null)
+        var candidates = snapshot.Seats.Where(s => s.SeatId != snapshot.Game.GuesserSeatId).ToList();
+        if (candidates.Count == 0)
         {
             return null;
         }
 
-        if (host.SeatId != snapshot.Game.GuesserSeatId)
+        bool IsConnected(Seat seat) =>
+            snapshot.Presence.TryGetValue(seat.SeatId, out var presence) && presence.IsConnected;
+
+        var host = candidates.FirstOrDefault(s => s.IsHost);
+        if (host is not null && IsConnected(host))
         {
             return host.SeatId;
         }
 
-        return snapshot.Seats.FirstOrDefault(s => s.SeatId != snapshot.Game.GuesserSeatId)?.SeatId;
+        return (candidates.FirstOrDefault(IsConnected) ?? host ?? candidates[0]).SeatId;
     }
 }

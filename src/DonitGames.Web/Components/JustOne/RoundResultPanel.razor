@@ -4,6 +4,7 @@
     <div class="outcome">
         <span class="outcome-emoji" aria-hidden="true">@Emoji(View.LastOutcome)</span>
         <p class="outcome-title @(View.LastOutcome == RoundOutcome.Correct ? "win" : "")">@Title(View.LastOutcome)</p>
+        <p class="outcome-sub">@CostLabel</p>
     </div>
 
     <div class="word-pair-grid">
@@ -14,17 +15,26 @@
         @if (!string.IsNullOrEmpty(View.GuesserAttempt))
         {
             <div class="word-pair-cell">
-                <p class="word-pair-label undercover">Geraden</p>
+                <p class="word-pair-label undercover">@(View.Guesser?.DisplayName ?? "Geraden")</p>
                 <p class="word-pair-value">@View.GuesserAttempt</p>
             </div>
         }
     </div>
 
+    @if (View.Clues.Count > 0)
+    {
+        @* The round is over, so this is the one moment the guesser gets to see the whole board,
+           cancelled clues included — which is exactly the bit everyone wants to talk about. *@
+        <p class="eyebrow">Alle hints</p>
+        <ClueList View="View" Clues="View.Clues" />
+    }
+
     <ScoreTrack PipsRemaining="View.PipsRemaining" />
 
+    <p class="form-hint center">Iedereen kan doorgaan — wacht tot de tafel klaar is met kijken.</p>
     <div class="action-bar">
         <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnAcknowledge.InvokeAsync()">
-            Volgende ronde
+            @(View.PipsRemaining <= 0 ? "Eindstand bekijken" : "Volgende ronde")
         </button>
     </div>
 </div>
@@ -35,6 +45,13 @@
 
     [Parameter, EditorRequired]
     public EventCallback OnAcknowledge { get; set; }
+
+    private string CostLabel => View.LastOutcome switch
+    {
+        RoundOutcome.Incorrect => "−2 kaarten",
+        null => string.Empty,
+        _ => "−1 kaart",
+    };
 
     private static string Emoji(RoundOutcome? outcome) => outcome switch
     {

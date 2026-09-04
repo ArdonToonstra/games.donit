@@ -1,6 +1,8 @@
 @using DonitGames.Core.JustOne
 
-<div class="score-track" role="img" aria-label="@PipsRemaining van de @JustOneState.StartingPips kaarten over">
+@* aria-hidden rather than role="img": the pips and the line under them say the same thing, and
+   labelling both makes a screen reader announce the score twice. *@
+<div class="score-track" aria-hidden="true">
     @for (var i = 0; i < JustOneState.StartingPips; i++)
     {
         <span class="score-pip @(i < PipsRemaining ? "is-filled" : "is-spent")"></span>

@@ -2,39 +2,57 @@
 
 <div class="card">
     <div class="card-header">
-        <p class="eyebrow">@(View.YouAreGuesser ? "Aan jou de beurt" : "De rader denkt na")</p>
+        <p class="eyebrow">@(View.YouAreGuesser ? "Aan jou de beurt" : $"{View.Guesser?.DisplayName ?? "De rader"} denkt na")</p>
         <h1>🤔 Raden maar</h1>
     </div>
 
-    <ul class="clue-review-list">
-        @foreach (var clue in View.Clues)
-        {
-            var name = View.Players.FirstOrDefault(p => p.SeatId == clue.SeatId)?.DisplayName ?? "?";
-            <li class="clue-review-item">
-                <span class="seat-name">@name</span>
-                <span class="clue-text">@clue.Text</span>
-            </li>
-        }
-    </ul>
+    <ClueList View="View" Clues="View.Clues" />
 
     @if (View.YouAreGuesser)
     {
-        <div class="form-group">
-            <label class="form-label" for="guess">Jouw antwoord</label>
-            <input id="guess" class="form-control" @bind="_guess" @bind:event="onchange" autofocus />
-        </div>
-        <div class="action-bar">
-            <button type="button" class="btn btn-primary btn-lg" disabled="@string.IsNullOrWhiteSpace(_guess)" @onclick="Submit">
-                Raad
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="() => OnPass.InvokeAsync()">
-                Pas
-            </button>
+        <form @onsubmit="Submit" @onsubmit:preventDefault>
+            <div class="form-group">
+                <label class="form-label" for="guess">Jouw antwoord</label>
+                <input id="guess" class="form-control" @bind="_guess" @bind:event="onchange"
+                    type="text" inputmode="text" enterkeyhint="send" maxlength="@JustOneEngine.MaxGuessLength"
+                    autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+                @if (_showEmptyHint)
+                {
+                    <p class="form-hint">Vul eerst een antwoord in, of pas.</p>
+                }
+            </div>
+            @* Same reason as the clue box: never disabled on a value the server hasn't seen yet. *@
+            <div class="action-bar is-inline">
+                <button type="submit" class="btn btn-primary btn-lg btn-block">Raad</button>
+            </div>
+        </form>
+
+        @* Pass sits well away from Raad and behind a confirm. It costs a card and cannot be
+           undone, and next to the main action on a phone it is one fat thumb away at all times. *@
+        <div class="jo-pass">
+            @if (_confirmPass)
+            {
+                <p class="form-hint center">Passen kost één kaart. Zeker weten?</p>
+                <div class="action-bar is-inline">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="() => _confirmPass = false">
+                        Terug
+                    </button>
+                    <button type="button" class="btn btn-danger" @onclick="() => OnPass.InvokeAsync()">
+                        Ja, pas
+                    </button>
+                </div>
+            }
+            else
+            {
+                <button type="button" class="btn btn-outline-secondary btn-sm btn-block" @onclick="() => _confirmPass = true">
+                    Pas deze ronde
+                </button>
+            }
         </div>
     }
     else
     {
-        <p class="subtle">Wachten op het antwoord…</p>
+        <p class="subtle center">Wachten op het antwoord…</p>
     }
 </div>
 
@@ -49,15 +67,32 @@
     public EventCallback OnPass { get; set; }
 
     private string _guess = string.Empty;
+    private bool _confirmPass;
+    private bool _showEmptyHint;
+    private int _renderedRound = -1;
+
+    protected override void OnParametersSet()
+    {
+        if (View.RoundNumber != _renderedRound)
+        {
+            _renderedRound = View.RoundNumber;
+            _guess = string.Empty;
+            _confirmPass = false;
+            _showEmptyHint = false;
+        }
+    }
 
     private async Task Submit()
     {
         if (string.IsNullOrWhiteSpace(_guess))
         {
+            _showEmptyHint = true;
             return;
         }
 
-        await OnSubmitGuess.InvokeAsync(_guess);
+        _showEmptyHint = false;
+        var guess = _guess;
         _guess = string.Empty;
+        await OnSubmitGuess.InvokeAsync(guess);
     }
 }
