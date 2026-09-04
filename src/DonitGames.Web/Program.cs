@@ -112,24 +112,59 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
-app.MapStaticAssets();
-
 // ---------------------------------------------------------------------------
 // The pass-and-play Undercover game is a separate Blazor WebAssembly app,
 // published into wwwroot/undercover/ with <base href="/undercover/">. It stays
-// client-side so its taps remain instant.
+// client-side so its taps remain instant. Its files are staged by hand
+// (Phase 5), outside MSBuild's view, so they're excluded from the
+// MapStaticAssets manifest (StaticWebAssetEndpointExclusionPattern in
+// DonitGames.Web.csproj) — that manifest is fixed at build time and would
+// otherwise go stale the moment the WASM app is restaged.
 //
-// ASP.NET Core's static-file middleware does not know every WASM asset type,
-// and an unmapped extension is served as a 404. Enumerate them rather than
-// switching on ServeUnknownFileTypes.
+// This can't be handed to UseStaticFiles either, no matter where it's placed
+// in the pipeline: MapStaticAssets installs a Development-only catch-all
+// (StaticAssetDevelopmentRuntimeHandler) that 404s any request under wwwroot
+// it doesn't recognize from its manifest, and it wins regardless of
+// middleware order — confirmed by disabling MapStaticAssets entirely and
+// watching these same requests succeed. Serving the files by hand,
+// short-circuiting before either MapStaticAssets or UseStaticFiles ever sees
+// the request, sidesteps that entirely and doesn't depend on ASP.NET Core's
+// unknown-extension allowlist either.
 // ---------------------------------------------------------------------------
-var wasmContentTypes = new FileExtensionContentTypeProvider();
-wasmContentTypes.Mappings[".wasm"] = "application/wasm";
-wasmContentTypes.Mappings[".blat"] = "application/octet-stream";
-wasmContentTypes.Mappings[".dat"] = "application/octet-stream";
-wasmContentTypes.Mappings[".dll"] = "application/octet-stream";
-wasmContentTypes.Mappings[".pdb"] = "application/octet-stream";
-app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = wasmContentTypes });
+var undercoverRoot = Path.Combine(app.Environment.WebRootPath, "undercover");
+var undercoverContentTypes = new FileExtensionContentTypeProvider();
+undercoverContentTypes.Mappings[".wasm"] = "application/wasm";
+undercoverContentTypes.Mappings[".blat"] = "application/octet-stream";
+undercoverContentTypes.Mappings[".dat"] = "application/octet-stream";
+undercoverContentTypes.Mappings[".dll"] = "application/octet-stream";
+undercoverContentTypes.Mappings[".pdb"] = "application/octet-stream";
+undercoverContentTypes.Mappings[".yaml"] = "application/yaml"; // WordPairs.yaml
+
+app.Use(async (ctx, next) =>
+{
+    var path = ctx.Request.Path.Value;
+    const string prefix = "/undercover/";
+    if (path is null || !path.StartsWith(prefix, StringComparison.Ordinal))
+    {
+        await next();
+        return;
+    }
+
+    var relative = path[prefix.Length..].Replace('/', Path.DirectorySeparatorChar);
+    var fullPath = Path.GetFullPath(Path.Combine(undercoverRoot, relative));
+    if (!fullPath.StartsWith(undercoverRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(fullPath))
+    {
+        await next(); // not a real file — MapFallbackToFile below serves index.html for SPA deep links
+        return;
+    }
+
+    ctx.Response.ContentType = undercoverContentTypes.TryGetContentType(fullPath, out var contentType)
+        ? contentType
+        : "application/octet-stream";
+    await ctx.Response.SendFileAsync(fullPath);
+});
+
+app.MapStaticAssets();
 
 app.UseAntiforgery();
 
