@@ -1,0 +1,40 @@
+@* The host's way out of a wedged room, available on every in-play screen.
+
+   Every other control in Just One belongs to a specific seat — the guesser's guess, the judge's
+   reveal — which is precisely the problem when that seat is the phone that died. Without this,
+   the table's only recovery is to abandon the room and re-scan a new one. *@
+@using DonitGames.Core.JustOne
+
+<div class="jo-host-footer">
+    @if (_confirming)
+    {
+        <p class="form-hint center">Spel nu beëindigen en naar de eindstand?</p>
+        <div class="action-bar is-inline">
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => _confirming = false">
+                Terug
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" @onclick="Confirm">
+                Ja, beëindigen
+            </button>
+        </div>
+    }
+    else
+    {
+        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => _confirming = true">
+            Spel beëindigen
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public EventCallback OnEndGame { get; set; }
+
+    private bool _confirming;
+
+    private async Task Confirm()
+    {
+        _confirming = false;
+        await OnEndGame.InvokeAsync();
+    }
+}

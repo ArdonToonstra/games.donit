@@ -1,39 +1,57 @@
 @using DonitGames.Core.JustOne
 
-<div class="card">
-    <div class="card-header">
-        <p class="eyebrow">Twijfelgeval</p>
-        <h1>⚖️ Klopt dit?</h1>
-    </div>
-
-    <div class="word-pair-grid">
-        <div class="word-pair-cell">
-            <p class="word-pair-label civilian">Geheim woord</p>
-            <p class="word-pair-value">@View.SecretWord</p>
-        </div>
-        <div class="word-pair-cell">
-            <p class="word-pair-label undercover">Antwoord</p>
-            <p class="word-pair-value">@View.GuesserAttempt</p>
+@if (View.YouAreGuesser)
+{
+    @* The guesser has already answered but must not see the word yet — the word simply isn't in
+       their view at this phase, so showing them the judge's two-word comparison would render an
+       empty box. They get their own screen instead. *@
+    <div class="card peek-shield">
+        <div class="card-header">
+            <p class="eyebrow">Jouw antwoord</p>
+            <h1>⚖️ @View.GuesserAttempt</h1>
+            <p class="subtle">De tafel bekijkt of dit goed genoeg is…</p>
         </div>
     </div>
-
-    @if (View.YouAreJudge)
-    {
-        <p class="subtle">De normalisering vond geen exacte match — is dit toch goed genoeg?</p>
-        <div class="action-bar">
-            <button type="button" class="btn btn-success btn-lg" @onclick="() => OnJudgeDecision.InvokeAsync(true)">
-                Correct
-            </button>
-            <button type="button" class="btn btn-danger btn-lg" @onclick="() => OnJudgeDecision.InvokeAsync(false)">
-                Fout
-            </button>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <p class="eyebrow">Twijfelgeval</p>
+            <h1>⚖️ Klopt dit?</h1>
         </div>
-    }
-    else
-    {
-        <p class="subtle">Wachten op het oordeel…</p>
-    }
-</div>
+
+        <div class="word-pair-grid">
+            <div class="word-pair-cell">
+                <p class="word-pair-label civilian">Geheim woord</p>
+                <p class="word-pair-value">@View.SecretWord</p>
+            </div>
+            <div class="word-pair-cell">
+                <p class="word-pair-label undercover">Antwoord van @(View.Guesser?.DisplayName ?? "de rader")</p>
+                <p class="word-pair-value">@View.GuesserAttempt</p>
+            </div>
+        </div>
+
+        @if (View.YouAreJudge)
+        {
+            <p class="subtle center">Geen exacte match — is dit toch goed genoeg?</p>
+            @* Stacked, not side by side: these two have opposite consequences and a mis-tap
+               costs the table two cards, which is the single most expensive misfire in the game. *@
+            <div class="jo-verdict">
+                <button type="button" class="btn btn-success btn-lg btn-block" @onclick="() => OnJudgeDecision.InvokeAsync(true)">
+                    Goedkeuren
+                </button>
+                <button type="button" class="btn btn-danger btn-lg btn-block" @onclick="() => OnJudgeDecision.InvokeAsync(false)">
+                    Afkeuren <span class="btn-cost">kost 2 kaarten</span>
+                </button>
+            </div>
+        }
+        else
+        {
+            <p class="subtle center">Wachten op het oordeel van @(View.Players.FirstOrDefault(p => p.IsJudge)?.DisplayName ?? "de scheidsrechter")…</p>
+        }
+    </div>
+}
 
 @code {
     [Parameter, EditorRequired]

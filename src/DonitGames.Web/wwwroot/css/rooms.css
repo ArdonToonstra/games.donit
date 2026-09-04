@@ -265,6 +265,264 @@ a.menu-tile:active { transform: scale(0.985); }
   text-align: center;
 }
 
+/* design-system.css's .action-bar is a sticky footer glued to a card's bottom edge —
+   negative margins, a top border and rounded bottom corners. That is exactly right
+   for the last row in a card and exactly wrong anywhere else, where it bleeds a
+   bordered strip across the middle. This is the mid-card variant. */
+.action-bar.is-inline {
+  position: static;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  background: transparent;
+  border-top: none;
+  border-radius: 0;
+}
+
+/* Whose turn / which round / how many cards, pinned above every in-play screen.
+   Sticky rather than static: the clue and seat lists scroll, and "whose turn is
+   it again" is exactly the question that comes up halfway down one. */
+.jo-status {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.jo-status-round {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.jo-status-turn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.jo-status-turn strong { color: var(--text-primary); }
+
+.jo-status-pips {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 800;
+  color: var(--accent-strong);
+}
+
+.jo-chip {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-strong);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* The clue itself leads; the author is secondary. Reading five clues at a glance
+   is the whole job of the guessing screen. */
+.clue-list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.clue-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.6rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.clue-item.is-yours {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.clue-word {
+  flex: 1 1 auto;
+  /* Both needed: min-width:0 lets the flex item shrink below its content, and
+     overflow-wrap breaks a pasted 24-character run rather than widening the card
+     and giving the whole page a horizontal scrollbar. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.clue-author {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.clue-item.is-cancelled { opacity: 0.6; }
+.clue-item.is-cancelled .clue-word { text-decoration: line-through; }
+
+.clue-tag {
+  flex: 0 0 auto;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: var(--neutral-soft);
+  border: 1px solid var(--neutral-line);
+  color: var(--neutral-ink);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.clue-tag.is-done {
+  background: var(--success-soft);
+  border-color: var(--success-line);
+  color: var(--success-ink);
+}
+
+.clue-tag.is-flagged {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-strong);
+}
+
+.clue-tag.is-struck {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger-ink);
+}
+
+/* Twijfelgeval: the words being compared, then one full-width toggle under them —
+   a --tap-high target instead of the old inline button squeezed beside a name. */
+.review-group {
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.review-group.is-cancelled {
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.review-group-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.review-group-word {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.review-group-word small {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.review-group.is-cancelled .review-group-word { text-decoration: line-through; opacity: 0.7; }
+.review-group.is-cancelled .review-group-word small { text-decoration: none; }
+
+/* Your own submitted clue, echoed back so you can check it before the round closes. */
+.jo-your-clue {
+  text-align: center;
+  padding: 0.9rem;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+.jo-your-clue .eyebrow { margin: 0 0 0.25rem; }
+
+.jo-your-clue-word {
+  margin: 0 0 0.6rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+}
+
+.jo-progress-count {
+  margin: 0.75rem 0 0;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+}
+
+.jo-progress-count span { color: var(--text-muted); }
+
+/* Pass is separated from Raad by a rule, not just by whitespace: it costs a card
+   and it lives one thumb-width from the main action. */
+.jo-pass {
+  margin-top: 1.125rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Approve / reject stacked, never side by side — see JudgeReviewPanel. */
+.jo-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.btn-cost {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.jo-host-footer {
+  margin-top: 1.25rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
 .clue-review-list {
   list-style: none;
   margin: 0.75rem 0;
@@ -340,3 +598,108 @@ a.menu-tile:active { transform: scale(0.985); }
 
 .score-pip.is-filled { background: var(--accent-primary); border-color: var(--accent-primary); }
 .score-pip.is-spent { background: var(--surface-2); }
+
+/* --------------------------------------------------------------------------
+   Just One — table mode ("aan tafel").
+   -------------------------------------------------------------------------- */
+.jo-mode { margin-top: 1.125rem; }
+
+.jo-mode-grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.jo-mode-tile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "emoji name" "emoji desc";
+  gap: 0.1rem 0.75rem;
+  align-items: start;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.85rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .1s ease;
+}
+
+.jo-mode-tile:active { transform: scale(0.985); }
+
+.jo-mode-tile.is-selected {
+  border-color: var(--accent-primary);
+  background: var(--accent-soft);
+}
+
+.jo-mode-emoji { grid-area: emoji; font-size: 1.6rem; line-height: 1.1; }
+
+.jo-mode-name {
+  grid-area: name;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.jo-mode-desc {
+  grid-area: desc;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+/* The held-up clue. Sized in vh because the text is rotated a quarter turn: after
+   rotation it is the viewport's height that the word has to fit along, so that is
+   the axis every size here is measured against. */
+.clue-banner {
+  display: grid;
+  place-items: center;
+  /* dvh second so it wins where supported: on a phone, vh includes the space the
+     URL bar occupies, which is exactly the strip this screen would overflow into. */
+  height: 78vh;
+  height: 78dvh;
+  overflow: hidden;
+  border: 2px solid var(--accent-line);
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft);
+}
+
+.clue-banner-text {
+  /* --clue-scale is set per clue by ClueBannerPanel, from the word's length. */
+  font-size: calc(var(--clue-scale, 8) * 1vh);
+  font-size: calc(var(--clue-scale, 8) * 1dvh);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Rotated, so the word runs along the phone's long edge — the whole reason this
+   screen exists. width is set before the transform, so it bounds the word against
+   the container's height once turned. */
+.clue-banner.is-sideways .clue-banner-text {
+  width: 76vh;
+  width: 76dvh;
+  transform: rotate(90deg);
+}
+
+.clue-banner.is-upright .clue-banner-text {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.clue-banner-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jo-mode-tile { transition: none; }
+}

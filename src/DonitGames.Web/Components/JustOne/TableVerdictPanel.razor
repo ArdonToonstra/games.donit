@@ -1,0 +1,43 @@
+@* Table mode's only real decision screen: the guess was spoken, so all that is left is to
+   record it. Any clue-giver may tap — see JustOneEngine.RecordTableVerdict. *@
+@using DonitGames.Core.JustOne
+
+<div class="card">
+    <div class="card-header">
+        <p class="eyebrow">Ronde @View.RoundNumber</p>
+        <h1>⚖️ Was het goed?</h1>
+    </div>
+
+    @if (View.YouAreGuesser)
+    {
+        <p class="subtle center">De tafel beslist over je antwoord…</p>
+    }
+    else
+    {
+        <div class="word-display">
+            <span class="word-category">Het woord was</span>
+            <span class="word-text">@View.SecretWord</span>
+        </div>
+
+        <p class="subtle center">
+            Iedereen behalve @(View.Guesser?.DisplayName ?? "de rader") mag dit vastleggen.
+        </p>
+
+        <div class="jo-verdict">
+            <button type="button" class="btn btn-success btn-lg btn-block" @onclick="() => OnVerdict.InvokeAsync(true)">
+                Goed geraden
+            </button>
+            <button type="button" class="btn btn-danger btn-lg btn-block" @onclick="() => OnVerdict.InvokeAsync(false)">
+                Fout <span class="btn-cost">kost 2 kaarten</span>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback<bool> OnVerdict { get; set; }
+}

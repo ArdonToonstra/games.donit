@@ -113,11 +113,25 @@ public sealed class GameRoom<TState>
         return Mutate(s => s with { Seats = [.. s.Seats, seat] });
     }
 
+    /// <summary>Removes a seat and, if that seat was the host, promotes the longest-seated
+    /// survivor. A hostless room is not merely awkward — every host-only control (start, kick,
+    /// and in Just One the judge's reveal and correct/wrong call) simply stops rendering for
+    /// everyone, so the room silently becomes unplayable with no message saying why.</summary>
     public RoomSnapshot<TState> RemoveSeat(Guid seatId) =>
-        Mutate(s => s with
+        Mutate(s =>
         {
-            Seats = s.Seats.Where(seat => seat.SeatId != seatId).ToList(),
-            Presence = s.Presence.Where(p => p.Key != seatId).ToDictionary(p => p.Key, p => p.Value),
+            var seats = s.Seats.Where(seat => seat.SeatId != seatId).ToList();
+            if (seats.Count > 0 && !seats.Any(seat => seat.IsHost))
+            {
+                var successor = seats.OrderBy(seat => seat.JoinedAtUtc).First().SeatId;
+                seats = seats.Select(seat => seat.SeatId == successor ? seat with { IsHost = true } : seat).ToList();
+            }
+
+            return s with
+            {
+                Seats = seats,
+                Presence = s.Presence.Where(p => p.Key != seatId).ToDictionary(p => p.Key, p => p.Value),
+            };
         });
 
     /// <summary>Ref-counts circuits per seat: +1 when a tab's circuit initializes, -1 when it's

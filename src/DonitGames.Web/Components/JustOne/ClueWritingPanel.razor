@@ -2,7 +2,7 @@
 
 @if (View.YouAreGuesser)
 {
-    <PeekShield />
+    <PeekShield Submitted="View.SubmittedClueCount" Total="View.ClueGiverCount" />
 }
 else
 {
@@ -17,39 +17,83 @@ else
             <span class="word-text">@View.SecretWord</span>
         </div>
 
-        @if (View.YourClueText is null)
+        @if (View.YourClueText is null || _editing)
         {
-            <div class="form-group">
-                <label class="form-label" for="clue">Jouw hint (één woord)</label>
-                <input id="clue" class="form-control" @bind="_clue" @bind:event="onchange" autofocus />
-            </div>
-            <div class="action-bar">
-                <button type="button" class="btn btn-primary btn-lg btn-block" disabled="@string.IsNullOrWhiteSpace(_clue)" @onclick="Submit">
-                    Verzenden
-                </button>
-            </div>
+            @* A real <form> so the phone keyboard's own send key submits — on a touch keyboard
+               that key is right under the thumb, while the button is a scroll away once the
+               keyboard is up. @bind fires on change, which the browser dispatches before the
+               submit, so the value is current either way. *@
+            <form @onsubmit="Submit" @onsubmit:preventDefault>
+                <div class="form-group">
+                    <label class="form-label" for="clue">Jouw hint (één woord)</label>
+                    <input id="clue" class="form-control" @bind="_clue" @bind:event="onchange"
+                        type="text" inputmode="text" enterkeyhint="send" maxlength="@JustOneEngine.MaxClueLength"
+                        autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+                    @if (_showEmptyHint)
+                    {
+                        <p class="form-hint">Vul eerst een hint in.</p>
+                    }
+                    else
+                    {
+                        <p class="form-hint">Eén woord, max @JustOneEngine.MaxClueLength tekens.</p>
+                    }
+                </div>
+                @* Deliberately NOT disabled while the box looks empty to the server: with
+                   @bind on change, the field's text hasn't arrived yet at the moment the
+                   player taps, so a disabled button would swallow that first tap and make
+                   every clue take two. Empty input is caught in Submit instead. *@
+                <div class="action-bar is-inline">
+                    @if (_editing)
+                    {
+                        <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CancelEdit">
+                            Annuleren
+                        </button>
+                    }
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        @(_editing ? "Opslaan" : "Verzenden")
+                    </button>
+                </div>
+            </form>
         }
         else
         {
-            <p class="subtle">Jouw hint: <strong>@View.YourClueText</strong> — wachten op de rest…</p>
+            <div class="jo-your-clue">
+                <p class="eyebrow">Jouw hint</p>
+                <p class="jo-your-clue-word">@View.YourClueText</p>
+                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="BeginEdit">
+                    Wijzigen
+                </button>
+            </div>
+            <p class="subtle center">Wachten op de rest…</p>
         }
 
-        <p class="eyebrow">Wie is klaar?</p>
+        <p class="eyebrow">@View.SubmittedClueCount van de @View.ClueGiverCount hints binnen</p>
         <ul class="seat-list">
-            @foreach (var player in View.Players.Where(p => !p.IsGuesser))
+            @foreach (var player in View.ClueGivers)
             {
                 <li class="seat-item">
-                    <span class="presence-dot @(player.HasSubmittedClue ? "is-connected" : "is-away")" aria-hidden="true"></span>
-                    <span class="seat-name">@player.DisplayName</span>
+                    <span class="presence-dot @(player.IsConnected ? "is-connected" : "is-away")" aria-hidden="true"></span>
+                    <span class="seat-name">
+                        @player.DisplayName
+                        @if (!player.IsConnected)
+                        {
+                            <span class="subtle">(offline)</span>
+                        }
+                    </span>
+                    <span class="clue-tag @(player.HasSubmittedClue ? "is-done" : "")">
+                        @(player.HasSubmittedClue ? "Klaar" : "Bezig")
+                    </span>
                 </li>
             }
         </ul>
 
-        @if (View.YouAreJudge)
+        @if (View.YouAreJudge && Missing > 0)
         {
+            @* The escape hatch for the clue-giver whose phone died mid-round. Hidden once
+               everyone is in, because then it can only fire by accident. *@
             <div class="action-bar">
                 <button type="button" class="btn btn-outline-secondary btn-block" @onclick="() => OnCloseClueWriting.InvokeAsync()">
-                    Verder (ook als niet iedereen klaar is)
+                    Verder zonder @Missing @(Missing == 1 ? "speler" : "spelers")
                 </button>
             </div>
         }
@@ -67,15 +111,52 @@ else
     public EventCallback OnCloseClueWriting { get; set; }
 
     private string _clue = string.Empty;
+    private bool _editing;
+    private bool _showEmptyHint;
+    private int _renderedRound = -1;
+
+    private int Missing => View.ClueGiverCount - View.SubmittedClueCount;
+
+    protected override void OnParametersSet()
+    {
+        // Transient input text is the one thing this component owns (CLAUDE.md #1), so it is
+        // also the one thing that has to be reset by hand when the round moves on — otherwise
+        // last round's half-typed clue is sitting in the box under this round's word.
+        if (View.RoundNumber != _renderedRound)
+        {
+            _renderedRound = View.RoundNumber;
+            _clue = string.Empty;
+            _editing = false;
+            _showEmptyHint = false;
+        }
+    }
+
+    private void BeginEdit()
+    {
+        _clue = View.YourClueText ?? string.Empty;
+        _editing = true;
+        _showEmptyHint = false;
+    }
+
+    private void CancelEdit()
+    {
+        _editing = false;
+        _clue = string.Empty;
+        _showEmptyHint = false;
+    }
 
     private async Task Submit()
     {
         if (string.IsNullOrWhiteSpace(_clue))
         {
+            _showEmptyHint = true;
             return;
         }
 
-        await OnSubmitClue.InvokeAsync(_clue);
+        _showEmptyHint = false;
+        _editing = false;
+        var clue = _clue;
         _clue = string.Empty;
+        await OnSubmitClue.InvokeAsync(clue);
     }
 }

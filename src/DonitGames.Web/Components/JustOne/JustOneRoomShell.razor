@@ -13,10 +13,25 @@
 else if (Snapshot is not null && View is not null && Room is not null)
 {
     <div class="container">
+        @if (View.Phase is not JustOnePhase.Lobby)
+        {
+            @* One wake lock for the whole room, mounted outside the phase switch so it isn't
+               torn down and re-acquired on every phase change. *@
+            <KeepAwake />
+        }
+
+        @* ClueReveal is excluded on purpose: that screen is being held up for other people to
+           read, so nothing shares it with the clue. *@
+        @if (View.Phase is not JustOnePhase.Lobby and not JustOnePhase.GameResults and not JustOnePhase.ClueReveal)
+        {
+            <JustOneStatusBar View="View" />
+        }
+
         @switch (View.Phase)
         {
             case JustOnePhase.Lobby:
                 <LobbyPanel RoomCode="@RoomCode" JoinUrl="@_joinUrl" Seats="Snapshot.Seats" Presence="Snapshot.Presence" ViewerSeatId="SeatId">
+                    <JustOneModePicker Mode="View.Mode" YouAreHost="View.YouAreHost" OnSelect="SetMode" />
                     @if (View.YouAreHost)
                     {
                         <div class="action-bar">
@@ -41,6 +56,14 @@ else if (Snapshot is not null && View is not null && Room is not null)
                 <DuplicateReviewView View="View" OnToggleGroup="ToggleReviewGroup" OnReveal="Reveal" />
                 break;
 
+            case JustOnePhase.ClueReveal:
+                <ClueBannerPanel View="View" OnFinishGuessing="FinishGuessing" OnPass="Pass" />
+                break;
+
+            case JustOnePhase.TableVerdict:
+                <TableVerdictPanel View="View" OnVerdict="RecordTableVerdict" />
+                break;
+
             case JustOnePhase.Guessing:
                 <GuessingPanel View="View" OnSubmitGuess="SubmitGuess" OnPass="Pass" />
                 break;
@@ -56,6 +79,11 @@ else if (Snapshot is not null && View is not null && Room is not null)
             case JustOnePhase.GameResults:
                 <GameResultsPanel View="View" OnNewGame="StartNewGame" />
                 break;
+        }
+
+        @if (View.YouAreHost && View.Phase is not JustOnePhase.Lobby and not JustOnePhase.GameResults and not JustOnePhase.ClueReveal)
+        {
+            <JustOneHostFooter OnEndGame="EndGame" />
         }
     </div>
 }
@@ -79,8 +107,14 @@ else if (Snapshot is not null && View is not null && Room is not null)
 
     private void Kick(Guid seatId) => Room?.RemoveSeat(seatId);
 
+    // The seat count is re-checked inside the mutator, against the room's *current* seats:
+    // CanStart above is computed from a snapshot that a kick landing in the same instant has
+    // already invalidated, and StartGame throws on a bad count — which would take this
+    // player's circuit with it.
     private void StartGame() =>
-        Room?.Mutate(s => s with { Game = JustOneEngine.StartGame(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) });
+        Room?.Mutate(s => JustOneEngine.CanStart(s.Seats)
+            ? s with { Game = JustOneEngine.StartGame(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) }
+            : s);
 
     private void SubmitClue(string text) =>
         Room?.Mutate(s => s with { Game = JustOneEngine.SubmitClue(s.Game, s.Seats, SeatId, text) });
@@ -101,5 +135,16 @@ else if (Snapshot is not null && View is not null && Room is not null)
         Room?.Mutate(s => s with { Game = JustOneEngine.AcknowledgeRoundResult(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) });
 
     private void StartNewGame() =>
-        Room?.Mutate(s => s with { Game = JustOneEngine.StartNewGame(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) });
+        Room?.Mutate(s => JustOneEngine.CanStart(s.Seats)
+            ? s with { Game = JustOneEngine.StartNewGame(s.Game, s.Seats, WordBankProvider.Words, Random.Shared) }
+            : s);
+
+    private void EndGame() => Room?.Mutate(s => s with { Game = JustOneEngine.EndGame(s.Game) });
+
+    private void SetMode(JustOneMode mode) => Room?.Mutate(s => s with { Game = JustOneEngine.SetMode(s.Game, mode) });
+
+    private void FinishGuessing() => Room?.Mutate(s => s with { Game = JustOneEngine.FinishGuessing(s.Game, SeatId) });
+
+    private void RecordTableVerdict(bool correct) =>
+        Room?.Mutate(s => s with { Game = JustOneEngine.RecordTableVerdict(s.Game, SeatId, correct) });
 }

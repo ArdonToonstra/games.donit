@@ -1,0 +1,46 @@
+@using DonitGames.Core.JustOne
+
+<div class="jo-mode">
+    <p class="eyebrow">Speelwijze</p>
+
+    @if (YouAreHost)
+    {
+        <div class="jo-mode-grid">
+            @foreach (var option in Options)
+            {
+                <button type="button" class="jo-mode-tile @(option.Mode == Mode ? "is-selected" : "")"
+                    aria-pressed="@((option.Mode == Mode).ToString().ToLowerInvariant())"
+                    @onclick="() => OnSelect.InvokeAsync(option.Mode)">
+                    <span class="jo-mode-emoji" aria-hidden="true">@option.Emoji</span>
+                    <span class="jo-mode-name">@option.Name</span>
+                    <span class="jo-mode-desc">@option.Description</span>
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="subtle">@Options.First(o => o.Mode == Mode).Name — @Options.First(o => o.Mode == Mode).Description</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneMode Mode { get; set; }
+
+    [Parameter]
+    public bool YouAreHost { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<JustOneMode> OnSelect { get; set; }
+
+    private sealed record ModeOption(JustOneMode Mode, string Emoji, string Name, string Description);
+
+    private static readonly ModeOption[] Options =
+    [
+        new(JustOneMode.Phones, "📱", "Op de telefoon",
+            "De app verzamelt de hints, streept dubbele weg en de rader typt zijn antwoord."),
+        new(JustOneMode.Table, "🙌", "Aan tafel",
+            "Je hint komt groot op je scherm; je houdt hem omhoog. Dubbele hints en het antwoord regelen jullie zelf."),
+    ];
+}

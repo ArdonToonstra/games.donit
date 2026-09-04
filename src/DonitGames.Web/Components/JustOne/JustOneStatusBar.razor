@@ -1,0 +1,36 @@
+@* Persistent context strip, shown on every in-play screen.
+
+   On one shared table you can just look up and see whose turn it is and how many cards are
+   left. With a phone each, that information has nowhere to live unless a screen carries it —
+   so this rides above every phase panel rather than being repeated (and drifting) inside each
+   one. Sticky, because the phases that scroll (clue lists, seat lists) are exactly the ones
+   where "wait, whose turn is it?" comes up. *@
+@using DonitGames.Core.JustOne
+
+<div class="jo-status">
+    <span class="jo-status-round">Ronde @View.RoundNumber</span>
+    <span class="jo-status-turn">
+        @if (View.YouAreGuesser)
+        {
+            <strong>Jij raadt</strong>
+        }
+        else
+        {
+            <span><strong>@(View.Guesser?.DisplayName ?? "?")</strong> raadt</span>
+        }
+        @* Phones mode only: in table mode the verdict is open to every clue-giver, so
+           labelling one person the referee would be a lie about who may tap. *@
+        @if (View.YouAreJudge && View.Mode == JustOneMode.Phones)
+        {
+            <span class="jo-chip">Scheidsrechter</span>
+        }
+    </span>
+    <span class="jo-status-pips" title="Kaarten over">
+        <span aria-hidden="true">🃏</span>@View.PipsRemaining
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+}

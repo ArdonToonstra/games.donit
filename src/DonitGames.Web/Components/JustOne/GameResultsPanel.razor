@@ -3,7 +3,7 @@
 <div class="card">
     <div class="outcome">
         <span class="outcome-emoji" aria-hidden="true">🏁</span>
-        <p class="outcome-title win">Spel afgelopen</p>
+        <p class="outcome-title win">@Verdict</p>
         <p class="outcome-sub">@View.CorrectCount van de @View.RoundsPlayed rondes goed geraden</p>
     </div>
 
@@ -11,11 +11,18 @@
 
     @if (View.YouAreHost)
     {
+        <p class="form-hint center">Zelfde tafel, nieuwe kaarten — niemand hoeft opnieuw te scannen.</p>
         <div class="action-bar">
             <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnNewGame.InvokeAsync()">
                 Nieuw spel
             </button>
         </div>
+    }
+    else
+    {
+        <p class="subtle center">
+            Wachten tot @(View.Players.FirstOrDefault(p => p.IsHost)?.DisplayName ?? "de host") een nieuw spel start…
+        </p>
     }
 </div>
 
@@ -25,4 +32,17 @@
 
     [Parameter, EditorRequired]
     public EventCallback OnNewGame { get; set; }
+
+    /// <summary>The physical game grades the table's score rather than just reporting it, and
+    /// that grade is most of the fun of the last screen.</summary>
+    private string Verdict => View.CorrectCount switch
+    {
+        >= 13 => "Perfect!",
+        12 => "Ongelooflijk!",
+        11 => "Uitstekend!",
+        >= 9 => "Heel goed",
+        >= 7 => "Goed gedaan",
+        >= 4 => "Netjes",
+        _ => "Volgende keer beter",
+    };
 }

@@ -1,0 +1,33 @@
+@* One rendering of "the clues on the table", shared by duplicate review, guessing and the
+   round recap. Which clues are in the list and whether they carry a cancelled flag is decided
+   upstream by JustOneSession.ViewFor — this component only draws what it was handed, so it can
+   never be the thing that leaks a clue to the guesser. *@
+@using DonitGames.Core.JustOne
+
+<ul class="clue-list">
+    @foreach (var clue in Clues)
+    {
+        <li class="clue-item @(clue.IsCancelled ? "is-cancelled" : "") @(clue.SeatId == View.YourSeatId ? "is-yours" : "")">
+            <span class="clue-word">@clue.Text</span>
+            <span class="clue-author">
+                @View.NameOf(clue.SeatId)@(clue.SeatId == View.YourSeatId ? " (jij)" : string.Empty)
+            </span>
+            @if (clue.IsCancelled)
+            {
+                <span class="clue-tag is-struck">Vervallen</span>
+            }
+            else if (clue.IsFlaggedForReview)
+            {
+                <span class="clue-tag is-flagged">Twijfelgeval</span>
+            }
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ClueView> Clues { get; set; } = [];
+}

@@ -11,41 +11,35 @@ else
             <p class="eyebrow">Controle</p>
             <h1>🔍 Dubbele hints</h1>
             <p class="subtle">
-                Gelijke hints vallen automatisch weg. Twijfelgevallen kan iedereen zelf aan- of
-                uitzetten.
+                Precies gelijke hints vallen automatisch weg. Twijfelgevallen beslist de tafel zelf.
             </p>
         </div>
 
-        <ul class="clue-review-list">
-            @foreach (var clue in View.Clues)
-            {
-                var name = View.Players.FirstOrDefault(p => p.SeatId == clue.SeatId)?.DisplayName ?? "?";
-                <li class="clue-review-item @(clue.IsCancelled ? "is-cancelled" : "")">
-                    <span class="seat-name">@name</span>
-                    <span class="clue-text">@clue.Text</span>
-                    @if (clue.IsCancelled && !clue.IsFlaggedForReview)
-                    {
-                        <span class="clue-status">Zelfde hint — weggevallen</span>
-                    }
-                    else if (clue.IsFlaggedForReview)
-                    {
-                        <span class="clue-status">Twijfelgeval</span>
-                    }
-                </li>
-            }
-        </ul>
+        <ClueList View="View" Clues="View.Clues" />
 
         @if (View.ReviewGroups.Count > 0)
         {
             <p class="eyebrow">Twijfelgevallen</p>
             @foreach (var group in View.ReviewGroups)
             {
-                var names = string.Join(" / ", group.SeatIds.Select(id => View.Players.FirstOrDefault(p => p.SeatId == id)?.DisplayName ?? "?"));
-                <div class="review-group-toggle">
-                    <span>@names</span>
-                    <button type="button" class="btn btn-outline-secondary btn-sm @(group.ManuallyCancelled ? "is-on" : "")"
+                @* The words are what the table is actually judging, so the row leads with them —
+                   the old version showed only the names, which asked everyone to scroll back up
+                   and match names to clues before they could decide. *@
+                <div class="review-group @(group.ManuallyCancelled ? "is-cancelled" : "")">
+                    <div class="review-group-words">
+                        @foreach (var seatId in group.SeatIds)
+                        {
+                            <span class="review-group-word">
+                                @(View.Clues.FirstOrDefault(c => c.SeatId == seatId)?.Text ?? "?")
+                                <small>@View.NameOf(seatId)</small>
+                            </span>
+                        }
+                    </div>
+                    <button type="button"
+                        class="btn btn-outline-secondary btn-block @(group.ManuallyCancelled ? "is-on" : "")"
+                        aria-pressed="@group.ManuallyCancelled.ToString().ToLowerInvariant()"
                         @onclick="() => OnToggleGroup.InvokeAsync(group.Index)">
-                        @(group.ManuallyCancelled ? "Toch verschillend" : "Ook laten vervallen")
+                        @(group.ManuallyCancelled ? "✓ Vervallen — toch toelaten" : "Hetzelfde — laten vervallen")
                     </button>
                 </div>
             }
@@ -53,15 +47,23 @@ else
 
         @if (View.YouAreJudge)
         {
+            @if (SurvivingCount == 0)
+            {
+                <p class="form-hint center">
+                    Er blijft geen enkele hint over — de ronde gaat meteen naar het resultaat.
+                </p>
+            }
             <div class="action-bar">
                 <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnReveal.InvokeAsync()">
-                    Onthullen aan de rader
+                    Tonen aan @(View.Guesser?.DisplayName ?? "de rader") (@SurvivorLabel)
                 </button>
             </div>
         }
         else
         {
-            <p class="subtle">Wachten tot de rader de hints te zien krijgt…</p>
+            <p class="subtle center">
+                Wachten tot @(View.Players.FirstOrDefault(p => p.IsJudge)?.DisplayName ?? "de scheidsrechter") de hints vrijgeeft…
+            </p>
         }
     </div>
 }
@@ -75,4 +77,8 @@ else
 
     [Parameter, EditorRequired]
     public EventCallback OnReveal { get; set; }
+
+    private int SurvivingCount => View.Clues.Count(c => !c.IsCancelled);
+
+    private string SurvivorLabel => SurvivingCount == 1 ? "1 hint" : $"{SurvivingCount} hints";
 }

@@ -21,7 +21,9 @@ public sealed record ReviewGroupView(int Index, IReadOnlyList<Guid> SeatIds, boo
 
 public sealed record JustOneView(
     JustOnePhase Phase,
+    JustOneMode Mode,
     int RoundNumber,
+    Guid YourSeatId,
     IReadOnlyList<JustOnePlayerView> Players,
     bool YouAreHost,
     bool YouAreGuesser,
@@ -34,4 +36,21 @@ public sealed record JustOneView(
     RoundOutcome? LastOutcome,
     int PipsRemaining,
     int CorrectCount,
-    int RoundsPlayed);
+    int RoundsPlayed)
+{
+    /// <summary>Everyone whose job this round is to write a clue — i.e. the table minus the
+    /// guesser. The denominator of every "who's still typing" line in the UI.</summary>
+    public IReadOnlyList<JustOnePlayerView> ClueGivers => [.. Players.Where(p => !p.IsGuesser)];
+
+    public int ClueGiverCount => Players.Count(p => !p.IsGuesser);
+
+    public int SubmittedClueCount => Players.Count(p => !p.IsGuesser && p.HasSubmittedClue);
+
+    public JustOnePlayerView? Guesser => Players.FirstOrDefault(p => p.IsGuesser);
+
+    /// <summary>Table mode gives the verdict to any clue-giver rather than to the judge —
+    /// see <c>JustOneEngine.RecordTableVerdict</c>.</summary>
+    public bool YouMayJudge => Mode == JustOneMode.Table ? !YouAreGuesser : YouAreJudge;
+
+    public string NameOf(Guid seatId) => Players.FirstOrDefault(p => p.SeatId == seatId)?.DisplayName ?? "?";
+}

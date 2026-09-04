@@ -13,7 +13,8 @@ public sealed record JustOneState(
     int CorrectCount,
     int RoundsPlayed,
     IReadOnlyList<string> UsedWords,
-    int RoundNumber)
+    int RoundNumber,
+    JustOneMode Mode)
 {
     public const int StartingPips = 13;
 
@@ -30,5 +31,6 @@ public sealed record JustOneState(
         0,
         0,
         [],
-        0);
+        0,
+        JustOneMode.Phones);
 }
