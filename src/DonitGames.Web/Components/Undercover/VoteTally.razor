@@ -1,0 +1,17 @@
+@using DonitGames.Core.Undercover
+
+<ul class="vote-tally">
+    @foreach (var group in Breakdown.Values.GroupBy(v => v).OrderByDescending(g => g.Count()))
+    {
+        var target = Players.FirstOrDefault(p => p.SeatId == group.Key);
+        <li>@(target?.DisplayName ?? "?") — @group.Count() stem(men)</li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UndercoverPlayerView> Players { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyDictionary<Guid, Guid> Breakdown { get; set; } = new Dictionary<Guid, Guid>();
+}

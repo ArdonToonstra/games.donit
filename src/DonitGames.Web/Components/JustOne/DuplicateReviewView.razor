@@ -1,0 +1,78 @@
+@using DonitGames.Core.JustOne
+
+@if (View.YouAreGuesser)
+{
+    <PeekShield Message="Wachten op de controle van de hints…" />
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <p class="eyebrow">Controle</p>
+            <h1>🔍 Dubbele hints</h1>
+            <p class="subtle">
+                Gelijke hints vallen automatisch weg. Twijfelgevallen kan iedereen zelf aan- of
+                uitzetten.
+            </p>
+        </div>
+
+        <ul class="clue-review-list">
+            @foreach (var clue in View.Clues)
+            {
+                var name = View.Players.FirstOrDefault(p => p.SeatId == clue.SeatId)?.DisplayName ?? "?";
+                <li class="clue-review-item @(clue.IsCancelled ? "is-cancelled" : "")">
+                    <span class="seat-name">@name</span>
+                    <span class="clue-text">@clue.Text</span>
+                    @if (clue.IsCancelled && !clue.IsFlaggedForReview)
+                    {
+                        <span class="clue-status">Zelfde hint — weggevallen</span>
+                    }
+                    else if (clue.IsFlaggedForReview)
+                    {
+                        <span class="clue-status">Twijfelgeval</span>
+                    }
+                </li>
+            }
+        </ul>
+
+        @if (View.ReviewGroups.Count > 0)
+        {
+            <p class="eyebrow">Twijfelgevallen</p>
+            @foreach (var group in View.ReviewGroups)
+            {
+                var names = string.Join(" / ", group.SeatIds.Select(id => View.Players.FirstOrDefault(p => p.SeatId == id)?.DisplayName ?? "?"));
+                <div class="review-group-toggle">
+                    <span>@names</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm @(group.ManuallyCancelled ? "is-on" : "")"
+                        @onclick="() => OnToggleGroup.InvokeAsync(group.Index)">
+                        @(group.ManuallyCancelled ? "Toch verschillend" : "Ook laten vervallen")
+                    </button>
+                </div>
+            }
+        }
+
+        @if (View.YouAreJudge)
+        {
+            <div class="action-bar">
+                <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnReveal.InvokeAsync()">
+                    Onthullen aan de rader
+                </button>
+            </div>
+        }
+        else
+        {
+            <p class="subtle">Wachten tot de rader de hints te zien krijgt…</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback<int> OnToggleGroup { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnReveal { get; set; }
+}

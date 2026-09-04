@@ -1,0 +1,31 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+publish/
+
+# IDE
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local config / secrets — never commit these
+# appsettings.Development.json is committed on purpose: no secrets, and it carries
+# AllowedHosts "*" which the cloudflared quick-tunnel dev workflow needs.
+appsettings.Local.json
+.env
+*.pfx
+
+# Staged build artifacts (produced, not authored)
+src/DonitGames.Web/wwwroot/undercover/
+
+# OS
+.DS_Store
+Thumbs.db

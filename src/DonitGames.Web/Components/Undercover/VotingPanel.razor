@@ -1,0 +1,90 @@
+@using DonitGames.Core.Undercover
+
+<div class="card">
+    <div class="card-header">
+        <p class="eyebrow">Stemronde</p>
+        <h1>🗳️ Wie is verdacht?</h1>
+    </div>
+
+    @if (TiedSeatIds.Count > 0)
+    {
+        <p class="form-error">Gelijke stand — de host beslist wie eraf gaat.</p>
+        @if (VoteBreakdown is not null)
+        {
+            <VoteTally Players="Players" Breakdown="VoteBreakdown" />
+        }
+
+        @if (YouAreHost)
+        {
+            <div class="vote-grid">
+                @foreach (var seatId in TiedSeatIds)
+                {
+                    var player = Players.FirstOrDefault(p => p.SeatId == seatId);
+                    <button type="button" class="vote-card" @onclick="() => OnResolveTie.InvokeAsync(seatId)">
+                        <span class="vote-name">@player?.DisplayName</span>
+                        <span class="vote-hint">Deze eruit</span>
+                    </button>
+                }
+            </div>
+        }
+    }
+    else if (!HaveYouVoted)
+    {
+        <div class="vote-grid">
+            @foreach (var player in Players.Where(p => !p.IsEliminated && p.SeatId != ViewerSeatId))
+            {
+                <button type="button" class="vote-card" @onclick="() => OnVote.InvokeAsync(player.SeatId)">
+                    <span class="vote-name">@player.DisplayName</span>
+                    <span class="vote-hint">Stem</span>
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="subtle">Je hebt gestemd. Wachten op de rest…</p>
+    }
+
+    @if (YouAreHost)
+    {
+        <p class="form-hint">Als host kan je altijd rechtstreeks iemand elimineren:</p>
+        <div class="vote-grid">
+            @foreach (var player in Players.Where(p => !p.IsEliminated))
+            {
+                <button type="button" class="vote-card" @onclick="() => OnForceEliminate.InvokeAsync(player.SeatId)">
+                    <span class="vote-name">@player.DisplayName</span>
+                    <span class="vote-hint">Elimineer</span>
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UndercoverPlayerView> Players { get; set; } = [];
+
+    [Parameter]
+    public Guid ViewerSeatId { get; set; }
+
+    [Parameter]
+    public bool HaveYouVoted { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<Guid, Guid>? VoteBreakdown { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Guid> TiedSeatIds { get; set; } = [];
+
+    [Parameter]
+    public bool YouAreHost { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<Guid> OnVote { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<Guid> OnResolveTie { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<Guid> OnForceEliminate { get; set; }
+}

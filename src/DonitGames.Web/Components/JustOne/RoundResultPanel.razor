@@ -1,0 +1,56 @@
+@using DonitGames.Core.JustOne
+
+<div class="card">
+    <div class="outcome">
+        <span class="outcome-emoji" aria-hidden="true">@Emoji(View.LastOutcome)</span>
+        <p class="outcome-title @(View.LastOutcome == RoundOutcome.Correct ? "win" : "")">@Title(View.LastOutcome)</p>
+    </div>
+
+    <div class="word-pair-grid">
+        <div class="word-pair-cell">
+            <p class="word-pair-label civilian">Het woord was</p>
+            <p class="word-pair-value">@View.SecretWord</p>
+        </div>
+        @if (!string.IsNullOrEmpty(View.GuesserAttempt))
+        {
+            <div class="word-pair-cell">
+                <p class="word-pair-label undercover">Geraden</p>
+                <p class="word-pair-value">@View.GuesserAttempt</p>
+            </div>
+        }
+    </div>
+
+    <ScoreTrack PipsRemaining="View.PipsRemaining" />
+
+    <div class="action-bar">
+        <button type="button" class="btn btn-primary btn-lg btn-block" @onclick="() => OnAcknowledge.InvokeAsync()">
+            Volgende ronde
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback OnAcknowledge { get; set; }
+
+    private static string Emoji(RoundOutcome? outcome) => outcome switch
+    {
+        RoundOutcome.Correct => "🎉",
+        RoundOutcome.Incorrect => "❌",
+        RoundOutcome.Passed => "⏭️",
+        RoundOutcome.NoClues => "🤷",
+        _ => "❓",
+    };
+
+    private static string Title(RoundOutcome? outcome) => outcome switch
+    {
+        RoundOutcome.Correct => "Goed geraden!",
+        RoundOutcome.Incorrect => "Helaas, fout",
+        RoundOutcome.Passed => "Gepast",
+        RoundOutcome.NoClues => "Geen enkele hint overgebleven",
+        _ => "Ronde voorbij",
+    };
+}

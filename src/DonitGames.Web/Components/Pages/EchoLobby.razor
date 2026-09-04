@@ -1,0 +1,81 @@
+@page "/echo"
+@layout MainLayout
+@using System.ComponentModel.DataAnnotations
+@using DonitGames.Core.Rooms
+@using DonitGames.Core.Rooms.Echo
+@using DonitGames.Web.Rooms
+
+<PageTitle>Echo (dev toy) — donit</PageTitle>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <p class="eyebrow">Room-infra toy</p>
+            <h1>🔔 Echo</h1>
+            <p class="subtle">
+                Geen spelregels — enkel "wie is hier / tik op de knop / zie de teller". Bestaat
+                om de kamer-infrastructuur te bewijzen voordat er een echt spel op steunt.
+            </p>
+        </div>
+
+        <EditForm Model="Model" FormName="echo-create" OnValidSubmit="HandleCreate" method="post">
+            @* EditForm already renders the antiforgery token itself when FormName is set — an
+               explicit <AntiforgeryToken /> here duplicates the hidden input and a real browser
+               (unlike a hand-crafted curl request) submits both values, which the antiforgery
+               middleware rejects outright. *@
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <label class="form-label" for="displayName">Jouw naam</label>
+                <InputText id="displayName" class="form-control" @bind-Value="Model!.DisplayName" autofocus />
+                <ValidationMessage For="() => Model!.DisplayName" />
+            </div>
+            <div class="action-bar">
+                <button type="submit" class="btn btn-primary btn-lg btn-block">Nieuwe kamer starten</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    // Nullable, no initializer (BL0008: the framework overwrites this with null on every form
+    // post before OnInitialized runs, so a "= new()" here would just lie about that). Must stay
+    // named exactly "Model" — it's also what EditForm binds to below, and the two have to agree
+    // for [SupplyParameterFromForm]'s posted field names ("Model.DisplayName") to resolve.
+    [SupplyParameterFromForm]
+    private CreateModel? Model { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Inject]
+    private RoomRegistry<EchoState> EchoRegistry { get; set; } = default!;
+
+    [Inject]
+    private SeatCookieService Cookies { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    protected override void OnInitialized() => Model ??= new CreateModel();
+
+    private void HandleCreate()
+    {
+        if (HttpContext is null)
+        {
+            return;
+        }
+
+        var room = EchoRegistry.Create(EchoState.Initial);
+        var seat = new Seat(Guid.NewGuid(), Model!.DisplayName.Trim(), IsHost: true, DateTimeOffset.UtcNow);
+        room.AddSeat(seat);
+        Cookies.Set(HttpContext.Response, room.Code, seat.SeatId);
+        Navigation.NavigateTo($"/room/{room.Code}");
+    }
+
+    private sealed class CreateModel
+    {
+        [Required(ErrorMessage = "Vul je naam in.")]
+        [StringLength(24, MinimumLength = 1, ErrorMessage = "Gebruik 1 tot 24 tekens.")]
+        public string DisplayName { get; set; } = string.Empty;
+    }
+}

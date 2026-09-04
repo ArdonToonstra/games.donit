@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DonitGames.Core\DonitGames.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+
+    <!--
+      wwwroot/undercover/ is the pass-and-play WASM app, staged by hand (Phase 5)
+      from a separate repo's `dotnet publish` output, not authored as part of this
+      project. Its files change outside MSBuild's view, so MapStaticAssets'
+      build-time compression/fingerprint manifest goes stale the moment they're
+      restaged — Program.cs serves it with a small hand-written middleware
+      instead, reading current bytes straight off disk (see the comment there).
+    -->
+    <StaticWebAssetEndpointExclusionPattern>$(StaticWebAssetEndpointExclusionPattern);**/undercover/**</StaticWebAssetEndpointExclusionPattern>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Word lists live in Data/, NOT wwwroot/. wwwroot is HTTP-served, and the
+      Just One deck must never be fetchable by a client sitting in a game.
+    -->
+    <Content Include="Data\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.8.0" />
+  </ItemGroup>
+
+</Project>

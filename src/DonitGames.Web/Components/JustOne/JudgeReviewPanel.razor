@@ -1,0 +1,44 @@
+@using DonitGames.Core.JustOne
+
+<div class="card">
+    <div class="card-header">
+        <p class="eyebrow">Twijfelgeval</p>
+        <h1>⚖️ Klopt dit?</h1>
+    </div>
+
+    <div class="word-pair-grid">
+        <div class="word-pair-cell">
+            <p class="word-pair-label civilian">Geheim woord</p>
+            <p class="word-pair-value">@View.SecretWord</p>
+        </div>
+        <div class="word-pair-cell">
+            <p class="word-pair-label undercover">Antwoord</p>
+            <p class="word-pair-value">@View.GuesserAttempt</p>
+        </div>
+    </div>
+
+    @if (View.YouAreJudge)
+    {
+        <p class="subtle">De normalisering vond geen exacte match — is dit toch goed genoeg?</p>
+        <div class="action-bar">
+            <button type="button" class="btn btn-success btn-lg" @onclick="() => OnJudgeDecision.InvokeAsync(true)">
+                Correct
+            </button>
+            <button type="button" class="btn btn-danger btn-lg" @onclick="() => OnJudgeDecision.InvokeAsync(false)">
+                Fout
+            </button>
+        </div>
+    }
+    else
+    {
+        <p class="subtle">Wachten op het oordeel…</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public JustOneView View { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback<bool> OnJudgeDecision { get; set; }
+}

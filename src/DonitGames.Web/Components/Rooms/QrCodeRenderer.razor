@@ -1,0 +1,24 @@
+@* Renders an inline SVG QR code for a join URL. Deliberately uses QRCoder's SvgQRCode renderer
+   only (pure string generation) rather than its bitmap QRCode renderer, which depends on
+   System.Drawing.Common — unsupported on the Linux/ARM64 container this app eventually deploys
+   to (docs/DEPLOYMENT.md). *@
+@using QRCoder
+
+<div class="qr-code" aria-label="QR-code om de kamer te joinen">
+    @((MarkupString)_svg)
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Url { get; set; } = string.Empty;
+
+    private string _svg = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(Url, QRCodeGenerator.ECCLevel.M);
+        var svgQrCode = new SvgQRCode(data);
+        _svg = svgQrCode.GetGraphic(6, darkColorHex: "#1a1a2e", lightColorHex: "#ffffff", drawQuietZones: false);
+    }
+}

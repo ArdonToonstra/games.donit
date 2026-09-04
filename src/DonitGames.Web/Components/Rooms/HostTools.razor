@@ -1,0 +1,38 @@
+@using DonitGames.Core.Rooms
+
+<div class="card host-tools">
+    <div class="card-header">
+        <p class="eyebrow">Hosttools</p>
+        <h2>Spelers beheren</h2>
+    </div>
+
+    @if (Seats.Count(s => s.SeatId != ViewerSeatId) == 0)
+    {
+        <p class="subtle">Nog geen andere spelers.</p>
+    }
+    else
+    {
+        <ul class="host-tools-list">
+            @foreach (var seat in Seats.Where(s => s.SeatId != ViewerSeatId))
+            {
+                <li>
+                    <span class="seat-name">@seat.DisplayName</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => OnKick.InvokeAsync(seat.SeatId)">
+                        Verwijderen
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Seat> Seats { get; set; } = [];
+
+    [Parameter]
+    public Guid ViewerSeatId { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<Guid> OnKick { get; set; }
+}
