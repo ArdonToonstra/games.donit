@@ -1,20 +1,44 @@
 # Deployment
 
-> **Status: deferred.** None of this has been executed. It is the research from the
-> planning pass, parked here so the findings — especially the Cloudflare Access gate and
-> the three WebSocket-killing settings — do not have to be rediscovered.
+> **Status: Cloudflare + networking done, image shipped by hand once (not yet via CI).**
+> `games.donit.be` is live and serving real traffic through the tunnel. What's left: commit
+> everything below so the real CI workflow produces a complete image (the one currently
+> running was built and pushed to the Pi's local Docker cache directly, skipping the
+> WASM-bundle staging step — `/undercover/` doesn't work on it yet), then swap to the
+> GHCR-pulled image once that lands.
 >
-> **Step zero when you come back to this:** the `rpi` docker context does not exist on the
-> dev machine, and `ssh rpi` times out from outside the house even though the tunnel is up.
-> Re-establish LAN access before anything else here is executable.
-
+> **Correction to earlier research:** `cloudflared` on this Pi runs as a **container**
+> (`cloudflare/cloudflared:latest`, on the default `bridge` network), not a native systemd
+> service as originally assumed here and in `donit-pi-server/README.md`. That assumption drove
+> the original `127.0.0.1:8085` plan below — abandoned in favor of an isolated Docker network
+> (see "Compose" section) once discovered, since a host-loopback-only bind is invisible to a
+> container-mode `cloudflared` (confirmed the hard way: identical symptom broke the temporary
+> SSH-over-tunnel access set up to do this work remotely — `localhost:22`/`127.0.0.1:22` both
+> got `connection refused` from cloudflared's own container namespace).
+>
+> **Temporary remote access, added for this session:** a `ssh.donit.be` Public Hostname +
+> Access application (email-gated, `ardontoonstra@hotmail.com`) plus a `Host rpi-tunnel` entry
+> in `~/.ssh/config`, added because this work happened away from the home LAN. Safe to remove
+> once back home — delete both the Cloudflare hostname/Access app and the `rpi-tunnel` SSH
+> config block; `Host rpi` (direct LAN IP) is untouched and still works as before.
 
 The Pi setup is in `C:\git\donit-pi-server\README.md`: Docker Compose, ingress via a
-**Cloudflare Zero Trust Tunnel** where `cloudflared` runs as a native systemd service (*not* a
-container) and hostname→port maps live only in the Cloudflare dashboard. ARM64, Debian Trixie,
-LAN `192.168.68.74`, Docker data-root on an ext4 USB-2.0 SSD.
+**Cloudflare Zero Trust Tunnel**, with hostname→origin maps living only in the Cloudflare
+dashboard (a "dashboard-managed" tunnel — no local `config.yml` on the Pi to edit for a new
+hostname). ARM64, Debian Trixie, LAN `192.168.68.74`, Docker data-root on an ext4 USB-2.0 SSD.
 
-**No .NET app has ever run on this Pi** — there is no container precedent to copy.
+**No .NET app had run on this Pi before this pass** — there was no container precedent to
+copy, but the Dockerfile below has now been build-tested and run-tested for real on the Pi's
+actual arm64 Docker daemon (via a `docker context create rpi --docker "host=ssh://..."`),
+including the full hardening flag set from the "Compose" section (`read_only`, `cap_drop: ALL`,
+`security_opt: no-new-privileges`, etc.) — all confirmed compatible with the app at runtime.
+
+**Kernel gap found during testing:** `mem_limit`/`cpus` in Compose are silently unenforced —
+`docker compose up` warned `Your kernel does not support memory limit capabilities or the
+cgroup is not mounted`. Raspberry Pi OS/Debian needs `cgroup_enable=memory cgroup_memory=1`
+added to `/boot/cmdline.txt` (then a reboot) for these limits to actually apply. Not a blocker
+— the container runs fine without them — but the safety net they're meant to provide isn't
+there yet.
 
 ### Cloudflare Access is a landmine — check this first
 
@@ -105,14 +129,22 @@ runtime memory — they are served straight off disk.
 
 ### Compose
 
-Host port **8085** — 3000, 8000, 8090 and 8282 are taken (homepage, Bigcapital, Beszel,
-Wallos), and 8085 avoids the high-collision defaults (8080/8443/9000/5000) that Bigcapital's
-out-of-repo stack might grab. Verify with `ssh rpi 'ss -ltnp'` first, since that stack isn't
-visible in this repo.
+**No published host port at all** — superseding the original `127.0.0.1:8085:8080` plan once
+`cloudflared` turned out to be a container, not a native service (see the correction at the top
+of this doc). Instead:
 
-Publish as **`127.0.0.1:8085:8080`**, not `8085:8080`. `cloudflared` is a native host service so
-`localhost` reaches it fine, while the LAN cannot — and *that* is what makes clearing
-`KnownProxies` safe, since only host-local traffic can spoof `X-Forwarded-*`.
+```bash
+docker network create games_net
+docker network connect games_net cloudflared   # additive — cloudflared keeps its default
+                                                # bridge network too, other hostnames unaffected
+```
+
+`donit-games` joins `games_net` (`external: true` in Compose, since it's created by hand, not
+managed by any compose file — `cloudflared` isn't managed by `donit-pi-server`'s compose file
+either). Cloudflare's Public Hostname origin for `games.donit.be` is `http://donit-games:8080`
+— a compose service name resolves on a user-defined network the same way a container name does.
+This is what makes clearing `KnownProxies` safe: nothing on the LAN can reach the app at all,
+only `cloudflared` can, over a network no other container is on.
 
 Use `image: ghcr.io/ardontoonstra/donit-games:${DONIT_GAMES_TAG:-latest}` with a committed
 `.env` holding `DONIT_GAMES_TAG=latest`. Compose interpolates `.env` locally on Windows even
@@ -203,10 +235,13 @@ a `restart` does nothing. `compose build homepage && compose up -d --no-deps hom
 
 1. `docker --context rpi compose ps donit-games` — STATUS `healthy`; `logs` clean.
    `docker --context rpi stats --no-stream` — well under 512 MiB.
-2. `ssh rpi 'ss -ltnp | grep 8085'` — must show `127.0.0.1:8085`, **not** `0.0.0.0:8085`.
+2. `docker network inspect games_net` — should list exactly `cloudflared` and `donit-games`,
+   nothing else. No `ss -ltnp` port check needed — there's no host port to check; that's the
+   point of the isolated-network approach.
 3. `curl -I https://games.donit.be` → **200, not a 302** to `cloudflareaccess.com`. A 302 means
-   an Access policy is gating it; fix that before anything else. A 502 means the tunnel reached
-   the Pi but nothing is on 8085; a redirect loop means `UseHttpsRedirection` is still there.
+   an Access policy is gating it; fix that before anything else. A 502 means `cloudflared`
+   can't resolve/reach `donit-games:8080` — check both are still on `games_net`; a redirect
+   loop means `UseHttpsRedirection` is still there.
 4. **The bundled WASM app**: `https://games.donit.be/undercover/` loads and plays; a **hard
    load** of `https://games.donit.be/undercover/how-to-play` returns the app rather than a 404
    (the SPA fallback); and DevTools → Network shows the `.wasm`/`.dat` assets returning 200 with
