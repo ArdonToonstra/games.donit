@@ -21,11 +21,11 @@ jobs:
 
     steps:
       - name: Checkout games.donit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Public repo — no token/PAT needed to check it out.
       - name: Checkout undercover-game
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ArdonToonstra/undercover-game
           path: undercover-game
