@@ -5,29 +5,20 @@
 > is public, and GHCR inherited that visibility — no separate package-visibility toggle or PAT
 > needed). All three games verified reachable through the tunnel: the portal, the WASM bundle
 > (`/undercover/`, including a hard-loaded deep link), and `WordPairs.yaml`/`JustOneWords.yaml`
-> all return real content through `https://games.donit.be`. Remaining follow-ups, not blockers:
-> the Pi's kernel doesn't enforce `mem_limit`/`cpus` yet (see below), and the temporary SSH
-> access below should be torn down once back on the home LAN.
+> all return real content through `https://games.donit.be`. Remaining follow-up, not a blocker:
+> the Pi's kernel doesn't enforce `mem_limit`/`cpus` yet (see below).
 >
 > **Correction to earlier research:** `cloudflared` on this Pi runs as a **container**
 > (`cloudflare/cloudflared:latest`, on the default `bridge` network), not a native systemd
 > service as originally assumed here and in `donit-pi-server/README.md`. That assumption drove
 > the original `127.0.0.1:8085` plan below — abandoned in favor of an isolated Docker network
 > (see "Compose" section) once discovered, since a host-loopback-only bind is invisible to a
-> container-mode `cloudflared` (confirmed the hard way: identical symptom broke the temporary
-> SSH-over-tunnel access set up to do this work remotely — `localhost:22`/`127.0.0.1:22` both
-> got `connection refused` from cloudflared's own container namespace).
->
-> **Temporary remote access, added for this session:** a `ssh.donit.be` Public Hostname +
-> Access application (email-gated, `[redacted-email]`) plus a `Host rpi-tunnel` entry
-> in `~/.ssh/config`, added because this work happened away from the home LAN. Safe to remove
-> once back home — delete both the Cloudflare hostname/Access app and the `rpi-tunnel` SSH
-> config block; `Host rpi` (direct LAN IP) is untouched and still works as before.
+> container-mode `cloudflared`.
 
 The Pi setup is in `C:\git\donit-pi-server\README.md`: Docker Compose, ingress via a
 **Cloudflare Zero Trust Tunnel**, with hostname→origin maps living only in the Cloudflare
 dashboard (a "dashboard-managed" tunnel — no local `config.yml` on the Pi to edit for a new
-hostname). ARM64, Debian Trixie, LAN `[redacted-lan-ip]`, Docker data-root on an ext4 USB-2.0 SSD.
+hostname). ARM64, Debian Trixie, Docker data-root on an ext4 USB-2.0 SSD.
 
 **No .NET app had run on this Pi before this pass** — there was no container precedent to
 copy, but the Dockerfile below has now been build-tested and run-tested for real on the Pi's

@@ -14,9 +14,7 @@ env:
 
 jobs:
   build:
-    # Free *native* arm64 runners for public repos — no QEMU at all. This repo
-    # is currently private, so these minutes are billed, not free; revisit
-    # once the repo goes public (see docs/DEPLOYMENT.md's public-repo note).
+    # Free *native* arm64 runners for public repos — no QEMU at all.
     runs-on: ubuntu-24.04-arm
 
     steps:
