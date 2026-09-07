@@ -206,7 +206,6 @@ base images and let Dependabot bump them — fixing ":latest everywhere" for at 
 
 This app has no secrets (no DB, no auth), so making it public is genuinely fine — that is not
 true of every repo in this stack, so audit each one individually before doing the same to it.
-[redacted-line]
 
 ### Homepage tile
 
