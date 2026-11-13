@@ -30,7 +30,7 @@ RUN dotnet publish src/DonitGames.Web/DonitGames.Web.csproj \
 # healthcheck and no docker exec to debug). No trimming (PublishTrimmed
 # breaks Razor component discovery at runtime) and no Native AOT.
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 WORKDIR /app
 
 # The aspnet image ships neither curl nor wget; needed for HEALTHCHECK below.
